@@ -1,147 +1,57 @@
 import React from "react";
-import { IconButton, Backdrop } from "@material-ui/core";
-import { makeStyles } from "@material-ui/core/styles";
+import { IconButton, InputBase } from "@material-ui/core";
 import { Menu as MenuIcon } from "@material-ui/icons";
-import { useLazyQuery, useQuery, useMutation } from "@apollo/react-hooks";
-import { connect } from "react-redux";
-import { withApollo } from "react-apollo";
-import { dispatchLogout, dispatchDirects, dispatchUser } from "redux/actions";
-import { USER, USERS, DIRECTS } from "graphql/queries";
-import { pasreQuery, formatDate } from "utils/index";
-import { LOGOUT } from "graphql/mutations";
+import { useDebouncedCallback } from "use-debounce";
 import MainBlock from "components/MainBlock";
 import MenuDrawer from "components/MenuDrawer";
-import ChatItem from "components/ChatItem";
-import UserItem from "components/UserItem";
+import { useStyles } from "./styles";
 
-const useStyles = makeStyles(theme => ({
-  menuButton: {
-    marginRight: theme.spacing(1)
-  },
-  backdrop: {
-    width: "100%",
-    zIndex: 1300,
-    maxWidth: 960,
-    left: "auto",
-    right: "auto"
-  }
-}));
-
-const Sidebar = props => {
+const Sidebar = ({ onSearch, onLogout, renderChats, chatId }) => {
   const classes = useStyles();
-  const [state, setstate] = React.useState({ open: false, timer: null, value: "" });
+  const [open, setOpen] = React.useState(false);
+  const [search, setSearch] = React.useState("");
 
   React.useEffect(() => {
-    setstate({ value: "" });
-  }, [props.location]);
+    setSearch("");
+    return () => setSearch("");
+  }, [chatId]);
 
-  const [users, usersData] = useLazyQuery(USERS);
-  const directsData = useQuery(DIRECTS, {
-    onCompleted: data => {
-      props.dispatchDirects(data.directs);
-    }
-  });
-  const [logout] = useMutation(LOGOUT, {
-    onCompleted: () => {
-      props.client.resetStore();
-      props.dispatchLogout();
-    }
-  });
+  const [debounce] = useDebouncedCallback(value => onSearch(value), 200);
 
-  const { loading } = useQuery(USER, {
-    onCompleted: data => {
-      props.dispatchUser(data);
-    }
-  });
-
-  const handleMenuToggle = () => setstate({ ...state, open: !state.open });
-
-  const handleOnChange = e => {
-    const { value } = e.target;
-    clearTimeout(state.timer);
-    setstate({ value });
-    if (value) {
-      const timer = setTimeout(() => users({ variables: { username: value } }), 200);
-      setstate({ value, timer });
-    }
+  const handleChange = e => {
+    setSearch(e.target.value);
+    debounce(e.target.value);
   };
 
-  const renderDirects = () => {
-    const { p } = pasreQuery(props.location);
-    if (!state.value.length && directsData.data)
-      return props.directs.map(({ user, lastMessage }) => {
-        return (
-          <ChatItem
-            key={user.username}
-            name={user.username}
-            avatar={user.avatar}
-            updatedAt={formatDate(lastMessage.createdAt)}
-            lastMessage={lastMessage.text}
-            unreaded={user.id}
-            selected={p === user.id}
-            link={() => `/?p=${user.id}`}
-          />
-        );
-      });
-  };
-
-  const renderUsers = () => {
-    if (state.value.length && usersData.data)
-      return usersData.data.users.map(({ id, username, avatar }) => (
-        <UserItem
-          key={username}
-          userId={id}
-          name={username}
-          avatar={avatar}
-          username={username}
-          link={`/?p=${id}`}
-        />
-      ));
-  };
+  const handleMenuToggle = () => setOpen(!open);
 
   return (
-    <>
-      <MenuDrawer
-        open={state.open}
-        user={props.user}
-        onToggle={handleMenuToggle}
-        onLogout={logout}
-      />
+    <div className={classes.Sidebar}>
+      <MenuDrawer open={open} onToggle={handleMenuToggle} onLogout={onLogout} />
       <MainBlock
-        searchbarProps={{
-          value: state.value,
-          placeholder: "Search",
-          onChange: handleOnChange
-        }}
         header={
-          <IconButton
-            edge="start"
-            color="inherit"
-            className={classes.menuButton}
-            onClick={handleMenuToggle}
-          >
-            <MenuIcon />
-          </IconButton>
+          <div className={classes.Sidebar_header}>
+            <IconButton
+              edge="start"
+              color="inherit"
+              className={classes.Sidebar_menuButton}
+              onClick={handleMenuToggle}
+            >
+              <MenuIcon />
+            </IconButton>
+            <InputBase
+              size="small"
+              placeholder="Search"
+              className={classes.Sidebar_searchbar}
+              onChange={handleChange}
+            />
+          </div>
         }
       >
-        {!loading && (
-          <>
-            {renderDirects()}
-            {renderUsers()}
-          </>
-        )}
+        {renderChats(search)}
       </MainBlock>
-      <Backdrop
-        open={!!state.open}
-        onClick={handleMenuToggle}
-        className={classes.backdrop}
-      />
-    </>
+    </div>
   );
 };
 
-export default connect(({ auth }) => ({ directs: auth.directs, user: auth.user }), {
-  dispatchUser,
-  dispatchLogout,
-  dispatchDirects
-})(withApollo(Sidebar));
+export default React.memo(Sidebar);

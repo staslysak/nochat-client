@@ -35,7 +35,11 @@ export const CREATE_DIRECT = gql`
     createDirect(userId: $userId, text: $text) {
       id
       user {
+        id
+        email
+        avatar
         username
+        createdAt
       }
     }
   }

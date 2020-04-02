@@ -1,5 +1,11 @@
 import React from "react";
-import { TextField, Button, Box, Typography, Link as MuiLink } from "@material-ui/core";
+import {
+  TextField,
+  Button,
+  Box,
+  Typography,
+  Link as MuiLink
+} from "@material-ui/core";
 import { Link } from "react-router-dom";
 import { useMutation } from "@apollo/react-hooks";
 import { CREATE_USER, LOGIN } from "graphql/mutations";
@@ -8,7 +14,7 @@ import { dispatchLogin } from "redux/actions";
 import { makeStyles } from "@material-ui/core/styles";
 
 const useStyles = makeStyles(theme => ({
-  login: {
+  Login: {
     display: "flex",
     justifyContent: "center",
     flexDirection: "column",
@@ -44,6 +50,7 @@ const Login = props => {
     if (/\/registration/.test(props.location.pathname)) {
       await createUser({ variables: state })
         .then(({ data }) => handleData(data.createUser))
+        .then(() => alert("we have send an email"))
         .catch(error => {
           const gqlError = error.graphQLErrors[0];
           if (gqlError) {
@@ -107,7 +114,7 @@ const Login = props => {
   };
 
   return (
-    <div className={classes.login}>
+    <div className={classes.Login}>
       <Box maxWidth={300}>
         <Typography variant="h6" gutterBottom>
           {/\/registration/.test(props.location.pathname) ? "Join" : "Login"}

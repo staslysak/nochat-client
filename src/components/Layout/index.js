@@ -1,8 +1,8 @@
 import React from "react";
-import Sidebar from "components/Sidebar";
 import { Container } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 import { withRouter } from "react-router-dom";
+import SidebarContainer from "containers/SidebarContainer";
 
 const useStyles = makeStyles(theme => ({
   container: {
@@ -10,12 +10,6 @@ const useStyles = makeStyles(theme => ({
     overflow: "hidden",
     padding: 0,
     maxHeight: "100vh"
-  },
-  sideBar: {
-    position: "relative",
-    width: "100%",
-    maxWidth: theme.props.sidebar,
-    minWidth: theme.props.sidebarMin
   },
   contentShift: {
     width: "100%",
@@ -28,9 +22,7 @@ const Layout = ({ children, ...props }) => {
 
   return (
     <Container maxWidth="md" className={classes.container}>
-      <div className={classes.sideBar}>
-        <Sidebar {...props} />
-      </div>
+      <SidebarContainer {...props} />
       <div className={classes.contentShift}>{children}</div>
     </Container>
   );

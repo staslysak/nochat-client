@@ -1,5 +1,10 @@
 import React from "react";
-import { Route, Switch, Redirect } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Route,
+  Switch,
+  Redirect
+} from "react-router-dom";
 import { CssBaseline } from "@material-ui/core";
 import Loadable from "react-loadable";
 import { connect } from "react-redux";
@@ -46,9 +51,9 @@ const publicRoutes = [
 
 const App = props => {
   return (
-    <>
+    <Router>
       <CssBaseline />
-      {props.auth.isAuthorized ? (
+      {props.isAuthorized ? (
         <Layout>
           {privatRoutes.map(route => (
             <Route key={route.path} {...route} />
@@ -61,8 +66,10 @@ const App = props => {
           ))}
         </Switch>
       )}
-    </>
+    </Router>
   );
 };
 
-export default connect(({ auth }) => ({ auth }))(App);
+export default connect(({ auth }) => ({ isAuthorized: auth.isAuthorized }))(
+  App
+);

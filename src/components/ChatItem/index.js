@@ -6,49 +6,31 @@ import {
   Typography,
   Badge
 } from "@material-ui/core";
-import { makeStyles } from "@material-ui/core/styles";
 import { Link } from "react-router-dom";
 import Avatar from "components/Avatar";
+import { useStyles } from "./styles";
 
-const useStyles = makeStyles(theme => ({
-  badge: {
-    height: 15,
-    "& .MuiBadge-badge": {
-      position: "relative",
-      transform: "none",
-      height: "inherit"
-    }
-  },
-  chatItem: {},
-  chatItemPrimary: {
-    display: "flex"
-  },
-  chatItemSecondary: {
-    display: "flex",
-    alignItems: "center"
-  },
-  chatItemPrimaryText: {
-    width: "100%",
-    ...theme.props.classes.ellipsis
-  },
-  chatItemSecondaryText: {
-    width: "100%",
-    marginRight: theme.spacing(1),
-    ...theme.props.classes.ellipsis
-  }
-}));
-
-const ChatItem = ({ link, selected, avatar, name, updatedAt, lastMessage, unreaded }) => {
+const ChatItem = ({
+  link,
+  selected,
+  avatar,
+  name,
+  updatedAt,
+  lastMessage,
+  unread,
+  ...props
+}) => {
   const classes = useStyles();
 
   return (
     <ListItem
       dense
       button
+      disableRipple
       to={link}
       component={Link}
       selected={selected}
-      className={classes.chatItem}
+      {...props}
     >
       <ListItemAvatar>
         <Avatar src={avatar} alt={name} />
@@ -56,7 +38,10 @@ const ChatItem = ({ link, selected, avatar, name, updatedAt, lastMessage, unread
       <ListItemText
         primary={
           <>
-            <Typography variant="body2" className={classes.chatItemPrimaryText}>
+            <Typography
+              variant="body2"
+              className={classes.ChatItem_primaryText}
+            >
               {name}
             </Typography>
             <Typography variant="caption" color="textSecondary">
@@ -65,19 +50,26 @@ const ChatItem = ({ link, selected, avatar, name, updatedAt, lastMessage, unread
           </>
         }
         primaryTypographyProps={{
-          className: classes.chatItemPrimary,
+          className: classes.ChatItem_primary,
           component: "div"
         }}
         secondary={
           <>
-            <Typography variant="caption" className={classes.chatItemSecondaryText}>
+            <Typography
+              variant="caption"
+              className={classes.ChatItem_secondaryText}
+            >
               {lastMessage}
             </Typography>
-            <Badge className={classes.badge} badgeContent={unreaded} color="secondary" />
+            <Badge
+              className={classes.ChatItem_badge}
+              badgeContent={unread}
+              color="secondary"
+            />
           </>
         }
         secondaryTypographyProps={{
-          className: classes.chatItemSecondary,
+          className: classes.ChatItem_secondary,
           component: "div"
         }}
       />

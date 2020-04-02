@@ -4,8 +4,10 @@ export const USERS = gql`
   query users($username: String) {
     users(username: $username) {
       id
+      email
       avatar
       username
+      createdAt
     }
   }
 `;
@@ -15,8 +17,9 @@ export const USER = gql`
     user {
       id
       email
-      username
       avatar
+      username
+      createdAt
     }
   }
 `;
@@ -27,16 +30,18 @@ export const DIRECTS = gql`
       id
       user {
         id
+        email
         avatar
         username
-      }
-      lastMessage {
-        text
-        user {
-          id
-        }
         createdAt
       }
+      lastMessage {
+        id
+        text
+        userId
+        createdAt
+      }
+      unread
     }
   }
 `;
@@ -44,19 +49,39 @@ export const DIRECTS = gql`
 export const DIRECT = gql`
   query direct($userId: Int!) {
     direct(userId: $userId) {
-      user {
+      direct {
         id
+        messages {
+          id
+          text
+          userId
+          createdAt
+        }
+      }
+      recipient {
+        id
+        email
         avatar
         username
         createdAt
       }
-      messages {
-        text
-        user {
-          id
-        }
-        createdAt
-      }
+    }
+  }
+`;
+
+export const DELETE_MESSAGE = gql`
+  query deleteMessage($id: Int!) {
+    deleteMessage(id: $id)
+  }
+`;
+
+export const NEW_MESSAGE = gql`
+  subscription($chatId: Int!) {
+    newMessage(chatId: $chatId) {
+      id
+      text
+      userId
+      createdAt
     }
   }
 `;

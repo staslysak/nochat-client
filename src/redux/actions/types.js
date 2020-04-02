@@ -2,8 +2,7 @@ export default {
   auth: {
     LOGIN: "LOGIN",
     LOGOUT: "LOGOUT",
-    USER: "USER",
-    ACTIVE_CHAT: "ACTIVE_CHAT",
-    DIRECTS: "DIRECTS"
+    TYPE_MESSAGE: "TYPE_MESSAGE",
+    CHAT_ID: "CHAT_ID"
   }
 };

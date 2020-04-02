@@ -1,25 +1,14 @@
 import React from "react";
 import { ListItem, ListItemAvatar, ListItemText } from "@material-ui/core";
-import { makeStyles } from "@material-ui/core/styles";
 import { Link } from "react-router-dom";
 import Avatar from "components/Avatar";
-
-const useStyles = makeStyles(theme => ({
-  userItem: {},
-  userItemPrimary: {
-    ...theme.props.classes.ellipsis
-  },
-  userItemSecondary: {
-    ...theme.props.classes.ellipsis,
-    color: theme.palette.secondary[200]
-  }
-}));
+import { useStyles } from "./styles";
 
 const UserItem = props => {
   const classes = useStyles();
 
   return (
-    <ListItem dense button to={props.link} component={Link} className={classes.userItem}>
+    <ListItem dense button to={props.link} component={Link}>
       <ListItemAvatar>
         <Avatar src={props.avatar} alt={props.name} />
       </ListItemAvatar>
@@ -27,13 +16,13 @@ const UserItem = props => {
         primary={props.name}
         primaryTypographyProps={{
           component: "div",
-          className: classes.userItemPrimary
+          className: classes.UserItem_primary
         }}
         secondary={`@${props.username}`}
         secondaryTypographyProps={{
           variant: "caption",
           component: "div",
-          className: classes.userItemSecondary
+          className: classes.UserItem_secondary
         }}
       />
     </ListItem>

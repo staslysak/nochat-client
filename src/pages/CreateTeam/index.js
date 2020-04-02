@@ -76,4 +76,4 @@ const CreateTeam = props => {
   );
 };
 
-export default connect(({ auth }) => ({ auth }), { dispatchLogin })(CreateTeam);
+export default connect(null, { dispatchLogin })(CreateTeam);

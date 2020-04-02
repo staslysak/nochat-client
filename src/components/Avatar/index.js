@@ -1,14 +1,6 @@
 import React from "react";
-import { makeStyles } from "@material-ui/core/styles";
 import { Avatar as MuiAvarat } from "@material-ui/core/";
-
-const useStyles = makeStyles(theme => ({
-  default: {
-    fontSize: theme.typography.body1.fontSize,
-    textTransform: "uppercase",
-    color: theme.palette.common.white
-  }
-}));
+import { useStyles } from "./styles";
 
 const Avatar = ({ alt = "", src }) => {
   const classes = useStyles();
@@ -22,7 +14,7 @@ const Avatar = ({ alt = "", src }) => {
     <MuiAvarat
       src={src}
       // alt={alt}
-      className={classes.default}
+      className={classes.Avatar}
       style={{ background: src }}
     >
       {name}
