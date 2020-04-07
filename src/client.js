@@ -11,7 +11,7 @@ const httpLink = new HttpLink({ uri: process.env.REACT_APP_API_URI });
 const wsLink = new WebSocketLink({
   uri: `ws://localhost:8081/graphql`,
   options: {
-    reconnect: true,
+    reconnect: false, // true
     connectionParams: () => {
       const token = localStorage.getItem("token");
       const refreshToken = localStorage.getItem("refreshToken");

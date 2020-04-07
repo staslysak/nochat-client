@@ -1,7 +1,7 @@
 import React from "react";
 import { Menu, MenuItem } from "@material-ui/core";
 
-const MessageMenu = ({ anchorEl, onClose, onDelete, onCopy }) => {
+const ChatItemMenu = ({ anchorEl, onClose, onDelete }) => {
   const handleActions = (callback) => () => {
     callback();
     onClose();
@@ -9,20 +9,16 @@ const MessageMenu = ({ anchorEl, onClose, onDelete, onCopy }) => {
 
   return (
     <Menu
-      // keepMounted
-      // anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
       anchorEl={anchorEl}
+      anchorOrigin={{ vertical: "top", horizontal: "right" }}
       open={Boolean(anchorEl)}
       onClose={onClose}
     >
       <MenuItem dense onClick={handleActions(onDelete)}>
-        Delete Message
-      </MenuItem>
-      <MenuItem dense onClick={handleActions(onCopy)}>
-        Copy Text
+        Delete chat
       </MenuItem>
     </Menu>
   );
 };
 
-export default MessageMenu;
+export default ChatItemMenu;

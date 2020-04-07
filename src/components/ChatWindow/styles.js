@@ -4,6 +4,7 @@ const useStyles = makeStyles(theme => ({
   ChatWindow: {
     position: "relative",
     height: "100%",
+    maxHeight: "calc(100% - 65px)",
     display: "flex",
     flexDirection: "column"
   },
@@ -36,7 +37,6 @@ const useStyles = makeStyles(theme => ({
     display: "flex",
     flexDirection: "column",
     height: "100%",
-    maxHeight: "calc(100% - 64px)",
     overflow: "auto",
     background: "transparent",
     padding: theme.spacing(2),

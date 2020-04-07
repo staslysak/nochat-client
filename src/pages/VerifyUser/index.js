@@ -5,7 +5,7 @@ import { connect } from "react-redux";
 import { dispatchLogin, dispatchLogout } from "redux/actions";
 import { pasreQuery } from "utils/index";
 
-const VerifyUser = props => {
+const VerifyUser = (props) => {
   const [verifyUser] = useMutation(VERIFY_USER);
 
   React.useEffect(() => {

@@ -3,17 +3,20 @@ import {
   BrowserRouter as Router,
   Route,
   Switch,
-  Redirect
+  Redirect,
 } from "react-router-dom";
 import { CssBaseline } from "@material-ui/core";
 import Loadable from "react-loadable";
 import { connect } from "react-redux";
 import Layout from "components/Layout";
 
-const createLoadableComponent = pathResolver => {
+const createLoadableComponent = (pathResolver) => {
   return Loadable({
     loader: pathResolver,
-    loading: props => (props.error ? console.error(props.error) : null)
+    loading: (props) => {
+      if (props.error) console.error(props.error);
+      return null;
+    },
   });
 };
 
@@ -21,52 +24,49 @@ const privatRoutes = [
   {
     path: "/",
     exact: false,
-    component: createLoadableComponent(() => import("./pages/Home"))
-  },
-  {
-    path: "/create_team",
-    exact: true,
-    component: createLoadableComponent(() => import("./pages/CreateTeam"))
+    component: createLoadableComponent(() => import("./pages/Home")),
   },
   {
     path: "/verify",
     exact: true,
-    component: createLoadableComponent(() => import("./pages/VerifyUser"))
-  }
+    component: createLoadableComponent(() => import("./pages/VerifyUser")),
+  },
 ];
 
 const publicRoutes = [
   {
     path: "/(|registration)",
     exact: true,
-    component: createLoadableComponent(() => import("./pages/Login"))
+    component: createLoadableComponent(() => import("./pages/Login")),
   },
   {
     path: "/verify",
     exact: true,
-    component: createLoadableComponent(() => import("./pages/VerifyUser"))
+    component: createLoadableComponent(() => import("./pages/VerifyUser")),
   },
-  { path: "*", component: Redirect }
+  { path: "*", component: Redirect },
 ];
 
-const App = props => {
+const App = (props) => {
   return (
-    <Router>
+    <>
       <CssBaseline />
-      {props.isAuthorized ? (
-        <Layout>
-          {privatRoutes.map(route => (
-            <Route key={route.path} {...route} />
-          ))}
-        </Layout>
-      ) : (
-        <Switch>
-          {publicRoutes.map(route => (
-            <Route key={route.path} {...route} />
-          ))}
-        </Switch>
-      )}
-    </Router>
+      <Router>
+        {props.isAuthorized ? (
+          <Layout>
+            {privatRoutes.map((route) => (
+              <Route key={route.path} {...route} />
+            ))}
+          </Layout>
+        ) : (
+          <Switch>
+            {publicRoutes.map((route) => (
+              <Route key={route.path} {...route} />
+            ))}
+          </Switch>
+        )}
+      </Router>
+    </>
   );
 };
 

@@ -6,48 +6,58 @@ import {
   ListItemText,
   Typography,
   Slide,
-  Backdrop
+  Backdrop,
 } from "@material-ui/core";
 import Avatar from "components/Avatar";
 import {
   Group as GroupIcon,
   Settings as SettingsIcon,
-  TouchApp as TouchAppIcon
+  TouchApp as TouchAppIcon,
 } from "@material-ui/icons";
 import { useStyles } from "./styles";
-import { USER } from "graphql/queries";
-import { useQuery } from "@apollo/react-hooks";
+import { CURRENT_USER } from "graphql/queries";
+import { LOGOUT } from "graphql/mutations";
+import { useQuery, useMutation } from "@apollo/react-hooks";
 import { get } from "lodash-es";
+import { connect } from "react-redux";
+import { dispatchLogout } from "redux/actions";
 
 export const menuSchema = [
   {
     title: "New Group",
     link: "/create_team",
     action: ({ onToggle }) => onToggle,
-    icon: <GroupIcon />
+    icon: <GroupIcon />,
   },
   {
     title: "New Channel",
     link: "/create_channel",
     action: ({ onToggle }) => onToggle,
-    icon: <TouchAppIcon />
+    icon: <TouchAppIcon />,
   },
   {
     title: "Settings",
     link: "/settings",
     action: ({ onToggle }) => onToggle,
-    icon: <SettingsIcon />
+    icon: <SettingsIcon />,
   },
   {
     title: "Log Out",
-    action: ({ onLogout }) => onLogout
-  }
+    action: ({ onLogout }) => onLogout,
+  },
 ];
 
 const MenuDrawer = ({ open, ...props }) => {
   const classes = useStyles();
-  const userData = useQuery(USER);
-  const user = get(userData, "data.user", {});
+  const userData = useQuery(CURRENT_USER);
+  const [onLogout, { client }] = useMutation(LOGOUT, {
+    onCompleted: () => {
+      client.resetStore();
+      props.dispatchLogout();
+    },
+  });
+
+  const user = get(userData, "data.currentUser", {});
 
   return (
     <>
@@ -69,7 +79,7 @@ const MenuDrawer = ({ open, ...props }) => {
                 to={link}
                 className={classes.MenuDrawer_listItem}
                 component={link ? Link : "div"}
-                onClick={action ? action(props) : undefined}
+                onClick={action ? action({ ...props, onLogout }) : undefined}
               >
                 {icon}
                 <Typography variant="body2" align={!!icon ? "left" : "center"}>
@@ -89,4 +99,8 @@ const MenuDrawer = ({ open, ...props }) => {
   );
 };
 
-export default MenuDrawer;
+export default React.memo(
+  connect(null, {
+    dispatchLogout,
+  })(MenuDrawer)
+);

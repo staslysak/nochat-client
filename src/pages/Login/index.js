@@ -1,10 +1,10 @@
 import React from "react";
 import {
-  TextField,
-  Button,
   Box,
+  Button,
+  TextField,
   Typography,
-  Link as MuiLink
+  Link as MuiLink,
 } from "@material-ui/core";
 import { Link } from "react-router-dom";
 import { useMutation } from "@apollo/react-hooks";
@@ -13,45 +13,46 @@ import { connect } from "react-redux";
 import { dispatchLogin } from "redux/actions";
 import { makeStyles } from "@material-ui/core/styles";
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   Login: {
     display: "flex",
     justifyContent: "center",
     flexDirection: "column",
     alignItems: "center",
     height: "100vh",
-    width: "100vw"
-  }
+    width: "100vw",
+  },
 }));
 
-const Login = props => {
+const Login = (props) => {
   const classes = useStyles();
   const [state, setstate] = React.useState({ errors: {} });
   const [createUser] = useMutation(CREATE_USER);
   const [loginUser] = useMutation(LOGIN);
 
-  const handleOnChange = ({ target: { name, value } }) =>
+  const handleOnChange = ({ target: { name, value } }) => {
     setstate({ ...state, [name]: value });
+  };
 
-  const handleErrors = errors => setstate({ ...state, errors });
+  const handleErrors = (errors) => setstate({ ...state, errors });
 
-  const handleData = async data => {
+  const handleData = async (data) => {
     if (/\/registration/.test(props.location.pathname)) {
       // props.history.push("/");
     } else {
       await props.dispatchLogin(data);
       props.history.push("/");
     }
-    setstate({ errors: {} });
+    setstate({ ...state, errors: {} });
   };
 
-  const onSubmit = async e => {
+  const onSubmit = async (e) => {
     e.preventDefault();
     if (/\/registration/.test(props.location.pathname)) {
       await createUser({ variables: state })
         .then(({ data }) => handleData(data.createUser))
         .then(() => alert("we have send an email"))
-        .catch(error => {
+        .catch((error) => {
           const gqlError = error.graphQLErrors[0];
           if (gqlError) {
             handleErrors(gqlError.extensions.validationErrors);
@@ -60,7 +61,7 @@ const Login = props => {
     } else {
       await loginUser({ variables: state })
         .then(({ data }) => handleData(data.login))
-        .catch(error => {
+        .catch((error) => {
           const gqlError = error.graphQLErrors[0];
           if (gqlError) {
             handleErrors(gqlError.extensions.validationErrors);

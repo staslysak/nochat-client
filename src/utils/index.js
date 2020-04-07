@@ -41,6 +41,24 @@ export const useRefCallback = value => {
   return [ref, bounding];
 };
 
-export const formatDate = date => {
-  return moment(+date).format("DD.MM.YY");
+export const formatDate = (date, prefix) => {
+  if (date) {
+    const currentDate = moment();
+    const formatDate = moment(+date);
+
+    const getFormat = diff => {
+      if (diff >= 5) {
+        return "DD.MM.YY";
+      } else {
+        return "HH:mm";
+      }
+    };
+
+    const format = getFormat(currentDate.diff(formatDate, "days"));
+
+    if (prefix) {
+      return prefix + formatDate.format(format);
+    }
+    return formatDate.format(format);
+  }
 };

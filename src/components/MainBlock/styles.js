@@ -9,11 +9,7 @@ export const useStyles = makeStyles(theme => ({
     background: theme.palette.background.paper,
     borderRight: `1px solid ${theme.palette.divider}`
   },
-  MainBlock_header: {
-    background: theme.palette.background.paper,
-    borderBottom: `1px solid ${theme.palette.divider}`,
-    color: theme.palette.text.primary
-  },
+  MainBlock_header: {},
   MainBlock_content: {
     height: "100%",
     maxHeight: "calc(100% - 64px)",
@@ -21,6 +17,7 @@ export const useStyles = makeStyles(theme => ({
     position: "relative",
     "&::-webkit-scrollbar": {
       display: "none"
-    }
+    },
+    borderTop: `1px solid ${theme.palette.divider}`
   }
 }));

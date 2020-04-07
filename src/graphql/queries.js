@@ -6,15 +6,17 @@ export const USERS = gql`
       id
       email
       avatar
+      online
       username
+      lastSeen
       createdAt
     }
   }
 `;
 
-export const USER = gql`
-  {
-    user {
+export const CURRENT_USER = gql`
+  query currentUser {
+    currentUser {
       id
       email
       avatar
@@ -25,14 +27,16 @@ export const USER = gql`
 `;
 
 export const DIRECTS = gql`
-  {
+  query directs {
     directs {
       id
       user {
         id
         email
         avatar
+        online
         username
+        lastSeen
         createdAt
       }
       lastMessage {
@@ -46,15 +50,16 @@ export const DIRECTS = gql`
   }
 `;
 
-export const DIRECT = gql`
-  query direct($userId: Int!) {
-    direct(userId: $userId) {
+export const CURRENT_DIRECT = gql`
+  query currentDirect($userId: Int!) {
+    currentDirect(userId: $userId) {
       direct {
         id
         messages {
           id
           text
           userId
+          unread
           createdAt
         }
       }
@@ -62,26 +67,30 @@ export const DIRECT = gql`
         id
         email
         avatar
+        online
         username
+        lastSeen
         createdAt
       }
     }
   }
 `;
 
-export const DELETE_MESSAGE = gql`
-  query deleteMessage($id: Int!) {
-    deleteMessage(id: $id)
-  }
-`;
-
-export const NEW_MESSAGE = gql`
-  subscription($chatId: Int!) {
-    newMessage(chatId: $chatId) {
+export const DIRECT_LAST_MESSAGE = gql`
+  query directLastMessage($chatId: Int!) {
+    directLastMessage(chatId: $chatId) {
       id
       text
       userId
       createdAt
+    }
+  }
+`;
+
+export const GET_ONLINE_USERS = gql`
+  query onlineUsers {
+    onlineUsers {
+      id
     }
   }
 `;

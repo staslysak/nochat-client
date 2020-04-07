@@ -4,57 +4,127 @@ import { formatDate } from "utils/index";
 import MainBlock from "components/MainBlock";
 import Avatar from "components/Avatar";
 import ChatWindow from "components/ChatWindow";
+import ChatInput from "components/ChatWindow/ChatInput";
 import Message from "components/Message";
 import { DirectFallback } from "components/Fallback";
 import { useStyles } from "./styles";
+import VisibilitySenson from "react-visibility-sensor";
+import Typing from "components/Typing";
+import cx from "classnames";
 
-const DirectChat = ({
-  user,
-  show,
-  chatId,
-  recipient,
-  messages,
-  subscribeToNewMessage,
-  onCreateMessage
-}) => {
+const DirectChat = (props) => {
   const classes = useStyles();
+  const [message, setMessage] = React.useState("");
 
-  const renderMessages = React.useMemo(() => {
-    return !messages ? (
-      <DirectFallback />
-    ) : (
-      messages.map(message => (
+  React.useEffect(() => {
+    let unsubsribe = () => {};
+    if (props.chatId) unsubsribe = props.subscribeToNewMessage(props.chatId);
+    return () => unsubsribe(props.chatId);
+  }, [props.chatId]);
+
+  React.useEffect(() => {
+    let unsubsribe = () => {};
+    if (props.chatId) unsubsribe = props.subscribeToDeleteMessage(props.chatId);
+    return () => unsubsribe(props.chatId);
+  }, [props.chatId]);
+
+  React.useEffect(() => {
+    let unsubsribe = () => {};
+    if (props.chatId) unsubsribe = props.subscribeToDeleteDirect(props.chatId);
+    return () => unsubsribe(props.chatId);
+  }, [props.chatId]);
+
+  React.useEffect(() => {
+    let unsubsribe = props.subscribeToNewDirect();
+    return () => unsubsribe();
+  }, []);
+
+  const handleSendMessage = () => {
+    if (message.trim().length) {
+      props.onCreateMessage(message);
+    }
+    setMessage("");
+  };
+
+  const handleChange = (e) => setMessage(e.target.value);
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const handleOnReadMessage = (isVisible) => {
+    console.log(isVisible, message.text, message);
+    console.log(isVisible && message.unread);
+    if (isVisible && message.unread) props.onReadMessage(message.id);
+  };
+
+  const renderStatus = () => {
+    if (props.recipient.online) return "online";
+    if (props.recipient.typing) return <Typing variant="secondary" />;
+
+    return formatDate(props.recipient.lastSeen, "last seen ");
+  };
+
+  const renderMessages = React.useMemo(
+    () =>
+      props.messages &&
+      props.messages.map((message) => (
+        // <VisibilitySenson
+        //   offset={{ top: 32, bottom: 32 }}
+        //   onChange={handleOnReadMessage}
+        // >
         <Message
           key={message.id}
-          {...message}
-          isOwner={message.userId === user.id}
+          text={message.text}
+          date={message.createdAt}
+          isOwner={message.userId === props.user.id}
+          menuProps={{
+            onDelete: props.onDeleteMessage(message.id),
+          }}
         />
-      ))
-    );
-  }, [messages]);
+        // </VisibilitySenson>
+      )),
+    [props.messages]
+  );
 
   return (
     <MainBlock
-      show={show}
+      show={props.show}
       header={
-        <ListItem dense className={classes.DirectChat_header}>
-          <ListItemText
-            primary={recipient.username}
-            primaryTypographyProps={{ component: "div" }}
-            secondary={`last seen ${formatDate(recipient.createdAt)}`}
-            secondaryTypographyProps={{ variant: "caption" }}
-          />
-          <Avatar src={recipient.avatar} alt={recipient.username} />
-        </ListItem>
+        props.recipient.username && (
+          <ListItem dense className={classes.DirectChat_header}>
+            <ListItemText
+              primary={props.recipient.username}
+              primaryTypographyProps={{ component: "div" }}
+              secondary={renderStatus()}
+              secondaryTypographyProps={{
+                variant: "caption",
+                className: cx({
+                  [classes.DirectChat_header_status]: props.recipient.online,
+                }),
+              }}
+            />
+            <Avatar
+              src={props.recipient.avatar}
+              alt={props.recipient.username}
+              online={props.recipient.online}
+            />
+          </ListItem>
+        )
       }
     >
-      <ChatWindow
-        chatId={chatId}
-        onSendMessage={onCreateMessage}
-        subscribeToNewMessage={subscribeToNewMessage}
-      >
-        {renderMessages}
+      <ChatWindow>
+        {!props.messages ? <DirectFallback /> : renderMessages}
       </ChatWindow>
+      <ChatInput
+        value={message}
+        onChange={handleChange}
+        onKeyPress={handleKeyPress}
+        onClick={handleSendMessage}
+      />
     </MainBlock>
   );
 };

@@ -1,66 +1,25 @@
 import React from "react";
 import useStyles from "./styles";
-import ChatInput from "./ChatInput";
 
-const ChatWindow = ({
-  chatId,
-  children,
-  onSendMessage,
-  subscribeToNewMessage
-}) => {
+const ChatWindow = (props) => {
   const classes = useStyles();
-  const containerRef = React.createRef();
-  const [message, setMessage] = React.useState("");
+  const chatWindowRef = React.createRef();
 
   const handleViewUpdate = React.useCallback(() => {
-    if (containerRef.current) {
-      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    if (chatWindowRef.current) {
+      chatWindowRef.current.scrollTop = chatWindowRef.current.scrollHeight;
     }
-  }, [containerRef]);
-
-  React.useEffect(() => {
-    let unsubsribe = () => {};
-
-    if (chatId) {
-      unsubsribe = subscribeToNewMessage(chatId);
-    }
-
-    return () => {
-      unsubsribe(chatId);
-    };
-  }, [chatId]);
+  }, [props.children]);
 
   React.useEffect(() => {
     handleViewUpdate();
-  }, [containerRef, handleViewUpdate]);
-
-  const handleSendMessage = () => {
-    if (message.trim().length) {
-      onSendMessage(message);
-    }
-    setMessage("");
-  };
-
-  const handleChange = e => setMessage(e.target.value);
-
-  const handleKeyPress = e => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
+  }, [chatWindowRef, handleViewUpdate]);
 
   return (
     <div className={classes.ChatWindow}>
-      <div className={classes.ChatWindow_content} ref={containerRef}>
-        {children}
+      <div className={classes.ChatWindow_content} ref={chatWindowRef}>
+        {props.children}
       </div>
-      <ChatInput
-        value={message}
-        onChange={handleChange}
-        onKeyPress={handleKeyPress}
-        onClick={handleSendMessage}
-      />
     </div>
   );
 };
