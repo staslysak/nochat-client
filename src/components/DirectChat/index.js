@@ -7,14 +7,20 @@ import ChatWindow from "components/ChatWindow";
 import ChatInput from "components/ChatWindow/ChatInput";
 import Message from "components/Message";
 import { DirectFallback } from "components/Fallback";
-import { useStyles } from "./styles";
-import VisibilitySenson from "react-visibility-sensor";
 import Typing from "components/Typing";
+import { useStyles } from "./styles";
 import cx from "classnames";
+// import VisibilitySenson from "react-visibility-sensor";
 
 const DirectChat = (props) => {
   const classes = useStyles();
   const [message, setMessage] = React.useState("");
+
+  React.useEffect(() => {
+    let unsubsribe = () => {};
+    if (props.chatId) unsubsribe = props.subscribeToUserTyping(props.chatId);
+    return () => unsubsribe(props.chatId);
+  }, [props.chatId]);
 
   React.useEffect(() => {
     let unsubsribe = () => {};
@@ -46,7 +52,12 @@ const DirectChat = (props) => {
     setMessage("");
   };
 
-  const handleChange = (e) => setMessage(e.target.value);
+  const handleChange = (e) => {
+    if (props.chatId) {
+      props.onTyping();
+    }
+    setMessage(e.target.value);
+  };
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -55,15 +66,15 @@ const DirectChat = (props) => {
     }
   };
 
-  const handleOnReadMessage = (isVisible) => {
-    console.log(isVisible, message.text, message);
-    console.log(isVisible && message.unread);
-    if (isVisible && message.unread) props.onReadMessage(message.id);
-  };
+  // const handleOnReadMessage = (isVisible) => {
+  //   console.log(isVisible, message.text, message);
+  //   console.log(isVisible && message.unread);
+  //   if (isVisible && message.unread) props.onReadMessage(message.id);
+  // };
 
   const renderStatus = () => {
+    if (props.typingUser) return <Typing variant="secondary" />;
     if (props.recipient.online) return "online";
-    if (props.recipient.typing) return <Typing variant="secondary" />;
 
     return formatDate(props.recipient.lastSeen, "last seen ");
   };

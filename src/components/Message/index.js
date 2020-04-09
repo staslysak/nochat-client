@@ -1,5 +1,5 @@
 import React from "react";
-import { Typography, Link } from "@material-ui/core";
+import { Typography } from "@material-ui/core"; // Link
 import cx from "classnames";
 import { formatDate } from "utils/index";
 import MessageMenu from "./MessageMenu";

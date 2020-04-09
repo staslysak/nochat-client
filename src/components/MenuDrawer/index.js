@@ -10,31 +10,25 @@ import {
 } from "@material-ui/core";
 import Avatar from "components/Avatar";
 import {
-  Group as GroupIcon,
+  // Group as GroupIcon,
   Settings as SettingsIcon,
-  TouchApp as TouchAppIcon,
+  // TouchApp as TouchAppIcon,
 } from "@material-ui/icons";
 import { useStyles } from "./styles";
-import { CURRENT_USER } from "graphql/queries";
-import { LOGOUT } from "graphql/mutations";
-import { useQuery, useMutation } from "@apollo/react-hooks";
-import { get } from "lodash-es";
-import { connect } from "react-redux";
-import { dispatchLogout } from "redux/actions";
 
 export const menuSchema = [
-  {
-    title: "New Group",
-    link: "/create_team",
-    action: ({ onToggle }) => onToggle,
-    icon: <GroupIcon />,
-  },
-  {
-    title: "New Channel",
-    link: "/create_channel",
-    action: ({ onToggle }) => onToggle,
-    icon: <TouchAppIcon />,
-  },
+  // {
+  //   title: "New Group",
+  //   link: "/create_team",
+  //   action: ({ onToggle }) => onToggle,
+  //   icon: <GroupIcon />,
+  // },
+  // {
+  //   title: "New Channel",
+  //   link: "/create_channel",
+  //   action: ({ onToggle }) => onToggle,
+  //   icon: <TouchAppIcon />,
+  // },
   {
     title: "Settings",
     link: "/settings",
@@ -47,17 +41,8 @@ export const menuSchema = [
   },
 ];
 
-const MenuDrawer = ({ open, ...props }) => {
+const MenuDrawer = ({ open, user, onLogout, ...props }) => {
   const classes = useStyles();
-  const userData = useQuery(CURRENT_USER);
-  const [onLogout, { client }] = useMutation(LOGOUT, {
-    onCompleted: () => {
-      client.resetStore();
-      props.dispatchLogout();
-    },
-  });
-
-  const user = get(userData, "data.currentUser", {});
 
   return (
     <>
@@ -65,7 +50,11 @@ const MenuDrawer = ({ open, ...props }) => {
         <div className={classes.MenuDrawer}>
           <List>
             <ListItem>
-              <Avatar src={user.avatar} alt={user.username} />
+              <Avatar
+                src={user.avatar}
+                alt={user.username}
+                online={user.online}
+              />
             </ListItem>
             <ListItem>
               <ListItemText primary={user.username} secondary={user.email} />
@@ -99,8 +88,4 @@ const MenuDrawer = ({ open, ...props }) => {
   );
 };
 
-export default React.memo(
-  connect(null, {
-    dispatchLogout,
-  })(MenuDrawer)
-);
+export default React.memo(MenuDrawer);

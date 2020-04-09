@@ -20,6 +20,7 @@ export const CURRENT_USER = gql`
       id
       email
       avatar
+      online
       username
       createdAt
     }
@@ -83,14 +84,6 @@ export const DIRECT_LAST_MESSAGE = gql`
       text
       userId
       createdAt
-    }
-  }
-`;
-
-export const GET_ONLINE_USERS = gql`
-  query onlineUsers {
-    onlineUsers {
-      id
     }
   }
 `;

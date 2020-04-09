@@ -1,7 +1,7 @@
 import React from "react";
 import { Menu, MenuItem } from "@material-ui/core";
 
-const ChatItemMenu = ({ anchorEl, onClose, onDelete }) => {
+const DirectItemMenu = ({ anchorEl, onClose, onDelete }) => {
   const handleActions = (callback) => () => {
     callback();
     onClose();
@@ -21,4 +21,4 @@ const ChatItemMenu = ({ anchorEl, onClose, onDelete }) => {
   );
 };
 
-export default ChatItemMenu;
+export default DirectItemMenu;

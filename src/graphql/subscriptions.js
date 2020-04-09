@@ -1,7 +1,7 @@
 import gql from "graphql-tag";
 
 export const NEW_MESSAGE_SUBSCRIPTION = gql`
-  subscription($chatId: Int!) {
+  subscription newMessage($chatId: Int!) {
     newMessage(chatId: $chatId) {
       id
       text
@@ -13,7 +13,7 @@ export const NEW_MESSAGE_SUBSCRIPTION = gql`
 `;
 
 export const DELETE_MESSAGE_SUBSCRIPTION = gql`
-  subscription($chatId: Int!) {
+  subscription deleteMessage($chatId: Int!) {
     deleteMessage(chatId: $chatId) {
       id
       userId
@@ -30,7 +30,7 @@ export const DELETE_DIRECT_SUBSCRIPTION = gql`
 `;
 
 export const NEW_DIRECT_SUBSCRIPTION = gql`
-  subscription {
+  subscription newDirect {
     newDirect {
       id
       user {
@@ -44,6 +44,14 @@ export const NEW_DIRECT_SUBSCRIPTION = gql`
         id
         text
         userId
+        unread
+        createdAt
+      }
+      messages {
+        id
+        text
+        userId
+        unread
         createdAt
       }
       unread
@@ -52,11 +60,17 @@ export const NEW_DIRECT_SUBSCRIPTION = gql`
 `;
 
 export const ONLINE_USER_SUBSCRIPTION = gql`
-  subscription {
+  subscription onlineUser {
     onlineUser {
       id
       online
       lastSeen
     }
+  }
+`;
+
+export const USER_TYPING_SUBSCRIPTION = gql`
+  subscription userTyping($chatId: Int!) {
+    userTyping(chatId: $chatId)
   }
 `;

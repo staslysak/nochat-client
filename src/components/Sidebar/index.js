@@ -1,87 +1,82 @@
 import React from "react";
-import { IconButton, InputBase } from "@material-ui/core";
+import { IconButton, InputBase, ListSubheader, List } from "@material-ui/core";
 import { Menu as MenuIcon } from "@material-ui/icons";
 import { useDebouncedCallback } from "use-debounce";
 import { useStyles } from "./styles";
 import MainBlock from "components/MainBlock";
 import MenuDrawer from "components/MenuDrawer";
-import ChatItem from "components/ChatItem";
 import UserItem from "components/UserItem";
-
-const renderDirects = (data, chatId) => {
-  return data
-    ? data.map((direct) => (
-        <ChatItem
-          chat={direct}
-          key={direct.id}
-          user={direct.user}
-          unread={direct.unread}
-          link={`/?p=${direct.user.id}`}
-          lastMessage={direct.lastMessage}
-          selected={direct.user.id === chatId}
-        />
-      ))
-    : null;
-};
-
-const renderUsers = (data) => {
-  return data
-    ? data.map((user) => (
-        <UserItem key={user.id} user={user} link={`/?p=${user.id}`} />
-      ))
-    : null;
-};
+import DirectItem from "components/DirectItem";
+import StyledList from "components/StylesList";
 
 const Sidebar = (props) => {
   const classes = useStyles();
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
 
+  const renderUsers = (data) => {
+    return data ? (
+      <StyledList subheader="Global search">
+        {data.map((user) => (
+          <UserItem
+            key={user.id}
+            user={user}
+            link={`/?p=${user.id}`}
+            onClick={() => setSearch("")}
+          />
+        ))}
+      </StyledList>
+    ) : null;
+  };
+
+  const renderDirects = (data) => {
+    return data.map((direct) => (
+      <DirectItem
+        key={direct.id}
+        direct={direct}
+        user={direct.user}
+        typing={
+          props.typings[direct.id] === direct.user.username
+            ? props.typings[direct.id]
+            : ""
+        }
+        link={`/?p=${direct.user.id}`}
+        selected={direct.user.id === props.chatId}
+        onDelete={props.onDeleteDirect}
+        subscribeToUserTyping={props.subscribeToUserTyping}
+        subscribeToNewMessage={props.subscribeToNewMessage}
+        subscribeToDeleteMessage={props.subscribeToDeleteMessage}
+      />
+    ));
+  };
+
   React.useEffect(() => {
     setSearch("");
   }, [props.chatId]);
 
   React.useEffect(() => {
-    props.subscribeToOnlineUsers();
-    props.subscribeToNewDirect();
-    props.subscribeToDeleteDirect();
-    console.log("asd");
-
-    props.setOnline();
-
-    window.addEventListener("beforeunload", (e) => {
-      e.preventDefault();
-      return props.setOffline();
-    });
-
-    return () => props.setOffline();
+    const unsubscribe = props.subscribeToNewDirect();
+    return () => unsubscribe();
   }, []);
 
   React.useEffect(() => {
-    let unsubsribes;
-    if (props.directs) {
-      unsubsribes = props.subscribeToNewMessage();
-
-      if (unsubsribes.length > 0) {
-        unsubsribes.forEach((unsubsribe) => unsubsribe());
-      }
-
-      unsubsribes = props.subscribeToNewMessage();
-    }
-  }, [props.directslength]);
+    const unsubscribe = props.subscribeToDeleteDirect();
+    return () => unsubscribe();
+  }, []);
 
   React.useEffect(() => {
-    let unsubsribes;
-    if (props.directs) {
-      unsubsribes = props.subscribeToDeleteMessage();
+    const unsubscribe = props.subscribeToOnlineUsers();
+    return () => unsubscribe();
+  }, []);
 
-      if (unsubsribes.length > 0) {
-        unsubsribes.forEach((unsubsribe) => unsubsribe());
-      }
+  React.useEffect(() => {
+    props.onConnect();
 
-      unsubsribes = props.subscribeToDeleteMessage();
-    }
-  }, [props.directslength]);
+    window.addEventListener("beforeunload", (e) => {
+      e.preventDefault();
+      return props.onDisconnect();
+    });
+  }, []);
 
   const [debounce] = useDebouncedCallback(
     (value) => props.onSearch(value),
@@ -97,7 +92,12 @@ const Sidebar = (props) => {
 
   return (
     <div className={classes.Sidebar}>
-      <MenuDrawer open={open} onToggle={handleMenuToggle} />
+      <MenuDrawer
+        open={open}
+        user={props.currentUser}
+        onLogout={props.onLogout}
+        onToggle={handleMenuToggle}
+      />
       <MainBlock
         header={
           <div className={classes.Sidebar_header}>
@@ -120,7 +120,7 @@ const Sidebar = (props) => {
         }
       >
         {!search.length
-          ? renderDirects(props.directs, props.chatId)
+          ? renderDirects(props.directs)
           : renderUsers(props.users)}
       </MainBlock>
     </div>

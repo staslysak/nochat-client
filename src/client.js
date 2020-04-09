@@ -5,31 +5,33 @@ import { ApolloLink, split } from "apollo-link";
 import { InMemoryCache } from "apollo-cache-inmemory";
 import { onError } from "apollo-link-error";
 import { getMainDefinition } from "apollo-utilities";
+import { store } from "./redux/store";
+import { dispatchLogout } from "redux/actions";
 
 const httpLink = new HttpLink({ uri: process.env.REACT_APP_API_URI });
 
 const wsLink = new WebSocketLink({
-  uri: `ws://localhost:8081/graphql`,
+  uri: process.env.REACT_APP_SOCKET_URI,
   options: {
-    reconnect: false, // true
+    reconnect: true,
     connectionParams: () => {
       const token = localStorage.getItem("token");
       const refreshToken = localStorage.getItem("refreshToken");
       return {
         headers: {
           "x-token": token,
-          "x-refresh-token": refreshToken
-        }
+          "x-refresh-token": refreshToken,
+        },
       };
-    }
-  }
+    },
+  },
 });
 
 const afterwareLink = new ApolloLink((operation, forward) =>
-  forward(operation).map(response => {
+  forward(operation).map((response) => {
     const context = operation.getContext();
     const {
-      response: { headers }
+      response: { headers },
     } = context;
     const token = headers.get("x-token");
     const refreshToken = headers.get("x-refresh-token");
@@ -47,8 +49,8 @@ const authMiddleware = new ApolloLink((operation, forward) => {
     headers: {
       ...headers,
       "x-token": localStorage.getItem("token"),
-      "x-refresh-token": localStorage.getItem("refreshToken")
-    }
+      "x-refresh-token": localStorage.getItem("refreshToken"),
+    },
   }));
 
   return forward(operation);
@@ -65,7 +67,7 @@ const errorMiddleware = onError(({ graphQLErrors, networkError }) => {
       );
       if (extensions.code === "UNAUTHENTICATED") {
         console.log(extensions.code, extensions.code === "UNAUTHENTICATED");
-        // store.dispatch(dispatchLogout());
+        store.dispatch(dispatchLogout());
       }
     });
 
@@ -93,5 +95,5 @@ const link = split(
 
 export const client = new ApolloClient({
   link,
-  cache: new InMemoryCache()
+  cache: new InMemoryCache(),
 });

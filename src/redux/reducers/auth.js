@@ -14,7 +14,7 @@ export default (state = INITIAL_STATE, { type, payload }) => {
         isAuthorized: true,
       };
     case TYPES.auth.LOGOUT:
-      // authTokens.remove();
+      authTokens.remove();
       return {
         ...state,
         isAuthorized: false,

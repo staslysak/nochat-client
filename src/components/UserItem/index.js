@@ -8,7 +8,7 @@ const UserItem = (props) => {
   const classes = useStyles();
 
   return (
-    <ListItem dense button to={props.link} component={Link}>
+    <ListItem {...props} dense button to={props.link} component={Link}>
       <ListItemAvatar>
         <Avatar
           src={props.user.avatar}
