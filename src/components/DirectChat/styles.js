@@ -1,12 +1,34 @@
 import { makeStyles } from "@material-ui/core/styles";
 
 export const useStyles = makeStyles((theme) => ({
-  DirectChat_header: {
+  DirectChat: {
+    position: "relative",
     width: "100%",
-    paddingLeft: 0,
-    paddingRight: 0,
+    height: "100%",
+    overflow: "hidden",
+    background: theme.palette.background.paper,
+    // borderRight: `1px solid ${theme.palette.divider}`,
+  },
+  DirectChat_header: {
+    minHeight: 64,
+    paddingLeft: theme.spacing(1),
+    paddingRight: theme.spacing(1),
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottom: `1px solid ${theme.palette.divider}`,
   },
   DirectChat_header_status: {
     color: theme.palette.secondary[200],
+  },
+  DirectChat_content: {
+    height: "100%",
+    maxHeight: "calc(100% - 64px)",
+    overflowY: "scroll",
+    position: "relative",
+    "&::-webkit-scrollbar": {
+      display: "none",
+    },
+    // borderTop: `1px solid ${theme.palette.divider}`
   },
 }));

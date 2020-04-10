@@ -18,7 +18,14 @@ const ChatInput = (props) => {
     if (inputRef.current) {
       inputRef.current.focus();
     }
-    props.onClick();
+    props.onSubmit();
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      props.onSubmit();
+    }
   };
 
   return (
@@ -26,11 +33,11 @@ const ChatInput = (props) => {
       <InputBase
         fullWidth
         multiline
-        rowsMax={5}
+        rowsMax={12}
         inputRef={inputRef}
         value={props.value}
         onChange={props.onChange}
-        onKeyPress={props.onKeyPress}
+        onKeyPress={handleKeyPress}
         placeholder="Write a message..."
         className={classes.ChatWindow_input}
       />

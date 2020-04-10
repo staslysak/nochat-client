@@ -35,13 +35,9 @@ export const menuSchema = [
     action: ({ onToggle }) => onToggle,
     icon: <SettingsIcon />,
   },
-  {
-    title: "Log Out",
-    action: ({ onLogout }) => onLogout,
-  },
 ];
 
-const MenuDrawer = ({ open, user, onLogout, ...props }) => {
+const MenuDrawer = ({ open, user, ...props }) => {
   const classes = useStyles();
 
   return (
@@ -68,7 +64,7 @@ const MenuDrawer = ({ open, user, onLogout, ...props }) => {
                 to={link}
                 className={classes.MenuDrawer_listItem}
                 component={link ? Link : "div"}
-                onClick={action ? action({ ...props, onLogout }) : undefined}
+                onClick={action ? action(props) : undefined}
               >
                 {icon}
                 <Typography variant="body2" align={!!icon ? "left" : "center"}>
@@ -76,6 +72,16 @@ const MenuDrawer = ({ open, user, onLogout, ...props }) => {
                 </Typography>
               </ListItem>
             ))}
+            <ListItem
+              button
+              className={classes.MenuDrawer_listItem}
+              component="div"
+              onClick={props.onLogout}
+            >
+              <Typography variant="body2" align="center">
+                Log Out
+              </Typography>
+            </ListItem>
           </List>
         </div>
       </Slide>

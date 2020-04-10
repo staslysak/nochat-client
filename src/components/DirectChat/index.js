@@ -1,7 +1,6 @@
 import React from "react";
 import { ListItem, ListItemText } from "@material-ui/core";
 import { formatDate } from "utils/index";
-import MainBlock from "components/MainBlock";
 import Avatar from "components/Avatar";
 import ChatWindow from "components/ChatWindow";
 import ChatInput from "components/ChatWindow/ChatInput";
@@ -59,13 +58,6 @@ const DirectChat = (props) => {
     setMessage(e.target.value);
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
   // const handleOnReadMessage = (isVisible) => {
   //   console.log(isVisible, message.text, message);
   //   console.log(isVisible && message.unread);
@@ -102,41 +94,45 @@ const DirectChat = (props) => {
   );
 
   return (
-    <MainBlock
-      show={props.show}
-      header={
-        props.recipient.username && (
-          <ListItem dense className={classes.DirectChat_header}>
-            <ListItemText
-              primary={props.recipient.username}
-              primaryTypographyProps={{ component: "div" }}
-              secondary={renderStatus()}
-              secondaryTypographyProps={{
-                variant: "caption",
-                className: cx({
-                  [classes.DirectChat_header_status]: props.recipient.online,
-                }),
-              }}
+    <div className={classes.DirectChat}>
+      {props.show && (
+        <>
+          <div className={classes.DirectChat_header}>
+            {props.recipient.username && (
+              <ListItem dense>
+                <ListItemText
+                  primary={props.recipient.username}
+                  primaryTypographyProps={{ component: "div" }}
+                  secondary={renderStatus()}
+                  secondaryTypographyProps={{
+                    variant: "caption",
+                    className: cx({
+                      [classes.DirectChat_header_status]:
+                        props.recipient.online,
+                    }),
+                  }}
+                />
+                <Avatar
+                  src={props.recipient.avatar}
+                  alt={props.recipient.username}
+                  online={props.recipient.online}
+                />
+              </ListItem>
+            )}
+          </div>
+          <div className={classes.DirectChat_content}>
+            <ChatWindow>
+              {!props.messages ? <DirectFallback /> : renderMessages}
+            </ChatWindow>
+            <ChatInput
+              value={message}
+              onChange={handleChange}
+              onSubmit={handleSendMessage}
             />
-            <Avatar
-              src={props.recipient.avatar}
-              alt={props.recipient.username}
-              online={props.recipient.online}
-            />
-          </ListItem>
-        )
-      }
-    >
-      <ChatWindow>
-        {!props.messages ? <DirectFallback /> : renderMessages}
-      </ChatWindow>
-      <ChatInput
-        value={message}
-        onChange={handleChange}
-        onKeyPress={handleKeyPress}
-        onClick={handleSendMessage}
-      />
-    </MainBlock>
+          </div>
+        </>
+      )}
+    </div>
   );
 };
 

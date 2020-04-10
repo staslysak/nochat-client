@@ -29,3 +29,8 @@ export const theme = createMuiTheme({
 
 // console.log("defaultTheme", defaultTheme);
 // console.log("customTheme", theme);
+
+// background:
+// theme.palette.type === "dark"
+//   ? theme.lighten(theme.palette.background.default, 0.235)
+//   : theme.darken(theme.palette.background.default, 0.057),

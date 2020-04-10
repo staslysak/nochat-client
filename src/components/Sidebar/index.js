@@ -1,9 +1,18 @@
 import React from "react";
-import { IconButton, InputBase, ListSubheader, List } from "@material-ui/core";
+import {
+  IconButton,
+  InputBase,
+  ListSubheader,
+  List,
+  ListItem,
+  ListItemText,
+  Avatar,
+  Typography,
+  ListItemAvatar,
+} from "@material-ui/core";
 import { Menu as MenuIcon } from "@material-ui/icons";
 import { useDebouncedCallback } from "use-debounce";
 import { useStyles } from "./styles";
-import MainBlock from "components/MainBlock";
 import MenuDrawer from "components/MenuDrawer";
 import UserItem from "components/UserItem";
 import DirectItem from "components/DirectItem";
@@ -98,31 +107,26 @@ const Sidebar = (props) => {
         onLogout={props.onLogout}
         onToggle={handleMenuToggle}
       />
-      <MainBlock
-        header={
-          <div className={classes.Sidebar_header}>
-            <IconButton
-              edge="start"
-              color="inherit"
-              className={classes.Sidebar_menuButton}
-              onClick={handleMenuToggle}
-            >
-              <MenuIcon />
-            </IconButton>
-            <InputBase
-              size="small"
-              value={search}
-              placeholder="Search"
-              className={classes.Sidebar_searchbar}
-              onChange={handleChange}
-            />
-          </div>
-        }
-      >
-        {!search.length
-          ? renderDirects(props.directs)
-          : renderUsers(props.users)}
-      </MainBlock>
+      <div className={classes.Sidebar_main}>
+        <div className={classes.Sidebar_header}>
+          <IconButton edge="start" color="inherit" onClick={handleMenuToggle}>
+            <MenuIcon />
+          </IconButton>
+          <InputBase
+            fullWidth
+            size="small"
+            value={search}
+            placeholder="Search"
+            className={classes.Sidebar_searchbar}
+            onChange={handleChange}
+          />
+        </div>
+        <div className={classes.Sidebar_content}>
+          {!search.length
+            ? renderDirects(props.directs)
+            : renderUsers(props.users)}
+        </div>
+      </div>
     </div>
   );
 };
