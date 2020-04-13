@@ -2,19 +2,13 @@ import { makeStyles } from "@material-ui/core/styles";
 
 const useStyles = makeStyles((theme) => ({
   ChatWindow: {
-    position: "relative",
     height: "100%",
-    maxHeight: "calc(100% - 65px)",
-    display: "flex",
-    flexDirection: "column",
-    borderBottom: `1px solid ${theme.palette.divider}`,
+    maxHeight: "calc(100% - 64px)",
   },
   ChatWindow_content: {
-    display: "flex",
-    flexDirection: "column",
     height: "100%",
     overflow: "auto",
-    padding: theme.spacing(2),
+    padding: `${theme.spacing(3)}px`,
     "&::-webkit-scrollbar": {
       width: 5,
       background: "transparent",

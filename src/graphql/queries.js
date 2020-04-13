@@ -56,13 +56,6 @@ export const CURRENT_DIRECT = gql`
     currentDirect(userId: $userId) {
       direct {
         id
-        messages {
-          id
-          text
-          userId
-          unread
-          createdAt
-        }
       }
       recipient {
         id
@@ -83,6 +76,18 @@ export const DIRECT_LAST_MESSAGE = gql`
       id
       text
       userId
+      createdAt
+    }
+  }
+`;
+
+export const CHAT_MESSAGES = gql`
+  query getChatMessages($chatId: Int!, $offset: Int) {
+    messages(chatId: $chatId, offset: $offset) {
+      id
+      text
+      userId
+      unread
       createdAt
     }
   }

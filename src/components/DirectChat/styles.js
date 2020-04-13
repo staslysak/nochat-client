@@ -6,7 +6,6 @@ export const useStyles = makeStyles((theme) => ({
     width: "100%",
     height: "100%",
     overflow: "hidden",
-    background: theme.palette.background.paper,
     // borderRight: `1px solid ${theme.palette.divider}`,
   },
   DirectChat_header: {
@@ -29,6 +28,10 @@ export const useStyles = makeStyles((theme) => ({
     "&::-webkit-scrollbar": {
       display: "none",
     },
-    // borderTop: `1px solid ${theme.palette.divider}`
+    // borderBottom: `1px solid ${theme.palette.divider}`,
+  },
+  DirectChat_messageWrapper: {
+    display: "flex",
+    flexDirection: "column",
   },
 }));

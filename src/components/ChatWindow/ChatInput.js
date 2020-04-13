@@ -6,26 +6,42 @@ import { withRouter } from "react-router-dom";
 
 const ChatInput = (props) => {
   const classes = useStyles();
-  const inputRef = React.createRef();
+  const inputRef = React.useRef();
+  const [message, setMessage] = React.useState("");
 
   React.useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus();
     }
+
+    setMessage("");
   }, [props.location]);
 
-  const handleOnClick = (inputRef) => async () => {
+  const handleOnSubmit = () => {
+    if (message.trim().length) {
+      props.onSubmit(message);
+    }
+
+    setMessage("");
+  };
+
+  const handleOnClick = (inputRef) => () => {
     if (inputRef.current) {
       inputRef.current.focus();
     }
-    props.onSubmit();
+    handleOnSubmit();
   };
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      props.onSubmit();
+      handleOnSubmit();
     }
+  };
+
+  const handleOnChange = (e) => {
+    props.onChange();
+    setMessage(e.target.value);
   };
 
   return (
@@ -35,15 +51,15 @@ const ChatInput = (props) => {
         multiline
         rowsMax={12}
         inputRef={inputRef}
-        value={props.value}
-        onChange={props.onChange}
+        value={message}
+        onChange={handleOnChange}
         onKeyPress={handleKeyPress}
         placeholder="Write a message..."
         className={classes.ChatWindow_input}
       />
       <IconButton
         onClick={handleOnClick(inputRef)}
-        disabled={!props.value.trim().length}
+        disabled={!message.trim().length}
       >
         <SendIcon />
       </IconButton>

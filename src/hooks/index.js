@@ -1,6 +1,12 @@
 import React from "react";
 import { useQuery, useLazyQuery, useMutation } from "@apollo/react-hooks";
-import { CURRENT_USER, CURRENT_DIRECT, USERS, DIRECTS } from "graphql/queries";
+import {
+  CURRENT_USER,
+  CURRENT_DIRECT,
+  USERS,
+  DIRECTS,
+  CHAT_MESSAGES,
+} from "graphql/queries";
 import {
   SET_OFFLINE,
   SET_ONLINE,
@@ -28,6 +34,7 @@ export const useSibebarFetch = () => {
   const [logout, { client }] = useMutation(LOGOUT, {
     onCompleted: async () => {
       await disconnect();
+      // console.log(store.dispatch());
       await store.dispatch(dispatchLogout());
       await client.resetStore();
     },
@@ -52,7 +59,13 @@ export const useSibebarFetch = () => {
 
 export const useDirectChatFetch = ({ userId }) => {
   const currentUser = useQuery(CURRENT_USER);
-  const currentDirect = useQuery(CURRENT_DIRECT, { variables: { userId } });
+  const currentDirect = useQuery(CURRENT_DIRECT, {
+    variables: { userId },
+    // fetchPolicy: "network-only",
+  });
+  const chatMessages = useLazyQuery(CHAT_MESSAGES, {
+    fetchPolicy: "network-only",
+  });
 
   const [createDirect] = useMutation(CREATE_DIRECT);
   const [createMessage] = useMutation(CREATE_MESSAGE);
@@ -65,7 +78,9 @@ export const useDirectChatFetch = ({ userId }) => {
       currentUser,
       currentDirect,
     },
-    lazyQueries: {},
+    lazyQueries: {
+      chatMessages,
+    },
     mutations: {
       createDirect,
       createMessage,
@@ -76,31 +91,31 @@ export const useDirectChatFetch = ({ userId }) => {
   };
 };
 
-export const useTyping = ({ chatId, userId, username }, callback) => {
-  const [state, setState] = React.useState({ timer: null, typing: false });
+export const useTyping = (data, callback) => {
+  const [typing, setTyping] = React.useState(false);
   const [user, setUser] = React.useState("");
-  const typingUser = { user, setUser };
   const [debounce] = useDebouncedCallback(async (value) => {
-    setState({ ...state, typing: false });
+    setTyping(false);
     await callback(value);
-  }, 1500);
+  }, 1000);
 
   const onTyping = async () => {
-    setState({ ...state, typing: true });
+    setTyping(true);
 
-    // const changeUsername = async () => {
-    //   setState({ ...state, typing: false });
-    //   await callback({ chatId, userId, username: "" });
-    // };
+    if (!typing) await callback(data);
 
-    if (!state.typing) {
-      await callback({ chatId, userId, username });
-    }
-
-    debounce({ chatId, userId, username: "" });
-    // clearTimeout(state.timer);
-    // setState({ ...state, timer: setTimeout(changeUsername, 1500) });
+    debounce({ ...data, username: "" });
   };
 
-  return [typingUser, onTyping];
+  return [{ user, setUser }, onTyping];
+};
+
+export const usePrev = (values) => {
+  const ref = React.useRef();
+
+  React.useEffect(() => {
+    ref.current = values;
+  }, [values]);
+
+  return ref.current;
 };

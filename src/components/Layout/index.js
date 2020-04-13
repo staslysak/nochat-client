@@ -14,6 +14,7 @@ const useStyles = makeStyles((theme) => ({
   },
   contentShift: {
     width: "100%",
+    background: theme.palette.background.paper,
     minWidth: theme.props.sidebarMin,
   },
 }));

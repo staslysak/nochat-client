@@ -1,15 +1,5 @@
 import React from "react";
-import {
-  IconButton,
-  InputBase,
-  ListSubheader,
-  List,
-  ListItem,
-  ListItemText,
-  Avatar,
-  Typography,
-  ListItemAvatar,
-} from "@material-ui/core";
+import { IconButton, InputBase } from "@material-ui/core";
 import { Menu as MenuIcon } from "@material-ui/icons";
 import { useDebouncedCallback } from "use-debounce";
 import { useStyles } from "./styles";
@@ -75,8 +65,9 @@ const Sidebar = (props) => {
 
   React.useEffect(() => {
     const unsubscribe = props.subscribeToOnlineUsers();
+    console.log("subscribeToOnlineUsers");
     return () => unsubscribe();
-  }, []);
+  }, [props.subscribeToOnlineUsers]);
 
   React.useEffect(() => {
     props.onConnect();

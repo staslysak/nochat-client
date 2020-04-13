@@ -9,6 +9,7 @@ import { CssBaseline } from "@material-ui/core";
 import Loadable from "react-loadable";
 import { connect } from "react-redux";
 import Layout from "components/Layout";
+import { isAuthorized } from "utils/index";
 
 const createLoadableComponent = (pathResolver) => {
   return Loadable({
@@ -52,7 +53,7 @@ const App = (props) => {
     <>
       <CssBaseline />
       <Router>
-        {props.isAuthorized ? (
+        {isAuthorized() ? (
           <Layout>
             {privatRoutes.map((route) => (
               <Route key={route.path} {...route} />
@@ -70,6 +71,4 @@ const App = (props) => {
   );
 };
 
-export default connect(({ auth }) => ({ isAuthorized: auth.isAuthorized }))(
-  App
-);
+export default connect(({ auth: { isAuthorized } }) => ({ isAuthorized }))(App);

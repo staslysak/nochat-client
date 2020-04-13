@@ -37,17 +37,12 @@ export const NEW_DIRECT_SUBSCRIPTION = gql`
         id
         email
         avatar
+        online
         username
+        lastSeen
         createdAt
       }
       lastMessage {
-        id
-        text
-        userId
-        unread
-        createdAt
-      }
-      messages {
         id
         text
         userId

@@ -12,11 +12,16 @@ const VerifyUser = (props) => {
     const { token } = pasreQuery(props.location);
     verifyUser({ variables: { secret: token } })
       .then(({ data }) => props.dispatchLogin(data.verifyUser))
-      .catch(() => props.dispatchLogout())
+      .catch((err) => {
+        props.dispatchLogout();
+      })
       .finally(() => props.history.push("/"));
   }, [props, verifyUser]);
 
   return null;
 };
 
-export default connect(null, { dispatchLogin, dispatchLogout })(VerifyUser);
+export default connect(null, (dispatch) => ({
+  dispatchLogin: (data) => dispatch(dispatchLogin(data)),
+  dispatchLogout: () => dispatch(dispatchLogout()),
+}))(VerifyUser);

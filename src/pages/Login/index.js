@@ -8,10 +8,11 @@ import {
 } from "@material-ui/core";
 import { Link } from "react-router-dom";
 import { useMutation } from "@apollo/react-hooks";
-import { CREATE_USER, LOGIN } from "graphql/mutations";
+import { REGISTER, LOGIN } from "graphql/mutations";
 import { connect } from "react-redux";
 import { dispatchLogin } from "redux/actions";
 import { makeStyles } from "@material-ui/core/styles";
+import { wsLink } from "../../client";
 
 const useStyles = makeStyles((theme) => ({
   Login: {
@@ -26,72 +27,76 @@ const useStyles = makeStyles((theme) => ({
 
 const Login = (props) => {
   const classes = useStyles();
-  const [state, setstate] = React.useState({ errors: {} });
-  const [createUser] = useMutation(CREATE_USER);
-  const [loginUser] = useMutation(LOGIN);
+  const [values, setValues] = React.useState({});
+  const [errors, setErrors] = React.useState({});
+  const [register] = useMutation(REGISTER);
+  const [login] = useMutation(LOGIN);
+  const isRegister = /\/registration/.test(props.location.pathname);
 
   const handleOnChange = ({ target: { name, value } }) => {
-    setstate({ ...state, [name]: value });
+    setValues((prevValues) => ({ ...prevValues, [name]: value }));
   };
 
-  const handleErrors = (errors) => setstate({ ...state, errors });
-
   const handleData = async (data) => {
-    if (/\/registration/.test(props.location.pathname)) {
-      // props.history.push("/");
+    if (isRegister) {
+      props.history.push("/login");
     } else {
       await props.dispatchLogin(data);
       props.history.push("/");
     }
-    setstate({ ...state, errors: {} });
+    setErrors({});
   };
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    if (/\/registration/.test(props.location.pathname)) {
-      await createUser({ variables: state })
-        .then(({ data }) => handleData(data.createUser))
-        .then(() => alert("we have send an email"))
+    if (isRegister) {
+      await register({ variables: values })
+        .then(({ data }) => handleData(data.register))
+        .then(() => alert("Check your email"))
         .catch((error) => {
-          const gqlError = error.graphQLErrors[0];
-          if (gqlError) {
-            handleErrors(gqlError.extensions.validationErrors);
+          if (error.graphQLErrors) {
+            error.graphQLErrors.forEach((err) =>
+              setErrors(err.extensions.validationErrors)
+            );
           }
         });
     } else {
-      await loginUser({ variables: state })
-        .then(({ data }) => handleData(data.login))
+      await login({ variables: values })
+        .then(({ data }) => {
+          handleData(data.login);
+          wsLink.subscriptionClient.tryReconnect();
+        })
         .catch((error) => {
-          const gqlError = error.graphQLErrors[0];
-          if (gqlError) {
-            handleErrors(gqlError.extensions.validationErrors);
+          if (error.graphQLErrors) {
+            error.graphQLErrors.forEach((err) =>
+              setErrors(err.extensions.validationErrors)
+            );
           }
         });
     }
   };
 
   const renderFields = () => {
-    const { username, email, password, errors } = state;
     return (
       <div>
         <TextField
+          fullWidth
           margin="dense"
           variant="outlined"
-          fullWidth
           onChange={handleOnChange}
-          value={username}
+          value={values.username}
           label="Username"
           name="username"
           error={errors.username}
           helperText={errors.username}
         />
-        {/\/registration/.test(props.location.pathname) && (
+        {isRegister && (
           <TextField
+            fullWidth
             margin="dense"
             variant="outlined"
-            fullWidth
             onChange={handleOnChange}
-            value={email}
+            value={values.email}
             label="Email"
             name="email"
             error={errors.email}
@@ -99,11 +104,11 @@ const Login = (props) => {
           />
         )}
         <TextField
+          fullWidth
           margin="dense"
           variant="outlined"
-          fullWidth
           onChange={handleOnChange}
-          value={password}
+          value={values.password}
           label="Password"
           name="password"
           type="password"
@@ -118,12 +123,12 @@ const Login = (props) => {
     <div className={classes.Login}>
       <Box maxWidth={300}>
         <Typography variant="h6" gutterBottom>
-          {/\/registration/.test(props.location.pathname) ? "Join" : "Login"}
+          {isRegister ? "Join" : "Login"}
         </Typography>
         <form onSubmit={onSubmit}>
           {renderFields()}
           <Typography align="center" variant="body2" gutterBottom>
-            {/\/registration/.test(props.location.pathname) ? (
+            {isRegister ? (
               <MuiLink align="center" component={Link} to="/">
                 Already have an account?
               </MuiLink>
@@ -134,7 +139,7 @@ const Login = (props) => {
             )}
           </Typography>
           <Button type="submit" fullWidth>
-            {/\/registration/.test(props.location.pathname) ? "Join" : "Login"}
+            {isRegister ? "Join" : "Login"}
           </Button>
         </form>
       </Box>
@@ -142,4 +147,6 @@ const Login = (props) => {
   );
 };
 
-export default connect(null, { dispatchLogin })(Login);
+export default connect(null, (dispatch) => ({
+  dispatchLogin: (data) => dispatch(dispatchLogin(data)),
+}))(Login);

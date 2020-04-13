@@ -7,16 +7,20 @@ import { onError } from "apollo-link-error";
 import { getMainDefinition } from "apollo-utilities";
 import { store } from "./redux/store";
 import { dispatchLogout } from "redux/actions";
+import { authTokens } from "utils/index";
 
-const httpLink = new HttpLink({ uri: process.env.REACT_APP_API_URI });
+const httpLink = new HttpLink({
+  uri: `${process.env.REACT_APP_API_URI}/graphql`,
+});
 
-const wsLink = new WebSocketLink({
-  uri: process.env.REACT_APP_SOCKET_URI,
+export const wsLink = new WebSocketLink({
+  uri: `${process.env.REACT_APP_SOCKET_URI}/graphql`,
   options: {
     reconnect: true,
     connectionParams: () => {
-      const token = localStorage.getItem("token");
-      const refreshToken = localStorage.getItem("refreshToken");
+      const { token, refreshToken } = authTokens.get();
+      console.log("connectionParams token", token);
+      console.log("connectionParams refreshToken", refreshToken);
       return {
         headers: {
           "x-token": token,
@@ -36,8 +40,7 @@ const afterwareLink = new ApolloLink((operation, forward) =>
     const token = headers.get("x-token");
     const refreshToken = headers.get("x-refresh-token");
     if (token && refreshToken) {
-      localStorage.setItem("token", token);
-      localStorage.setItem("refreshToken", refreshToken);
+      authTokens.set({ token, refreshToken });
     }
 
     return response;
@@ -45,13 +48,16 @@ const afterwareLink = new ApolloLink((operation, forward) =>
 );
 
 const authMiddleware = new ApolloLink((operation, forward) => {
-  operation.setContext(({ headers }) => ({
-    headers: {
-      ...headers,
-      "x-token": localStorage.getItem("token"),
-      "x-refresh-token": localStorage.getItem("refreshToken"),
-    },
-  }));
+  operation.setContext(({ headers }) => {
+    const { token, refreshToken } = authTokens.get();
+    return {
+      headers: {
+        ...headers,
+        "x-token": token,
+        "x-refresh-token": refreshToken,
+      },
+    };
+  });
 
   return forward(operation);
 });
@@ -65,8 +71,9 @@ const errorMiddleware = onError(({ graphQLErrors, networkError }) => {
           Location: ${locations}, 
           Path: ${path}`
       );
-      if (extensions.code === "UNAUTHENTICATED") {
-        console.log(extensions.code, extensions.code === "UNAUTHENTICATED");
+      if (
+        ["UNAUTHENTICATED"].includes(extensions.code) // ["UNAUTHENTICATED", "INTERNAL_SERVER_ERROR"]
+      ) {
         store.dispatch(dispatchLogout());
       }
     });

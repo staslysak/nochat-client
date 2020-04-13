@@ -1,6 +1,6 @@
 import qs from "query-string";
-import React from "react";
 import moment from "moment";
+import decode from "jwt-decode";
 
 export const stringifyQuery = (location, modifiers = {}) => {
   const settings = {
@@ -20,6 +20,21 @@ export const stringifyQuery = (location, modifiers = {}) => {
   };
 };
 
+export const authTokens = {
+  get: () => ({
+    token: localStorage.getItem("token"),
+    refreshToken: localStorage.getItem("refreshToken"),
+  }),
+  set: ({ token, refreshToken }) => {
+    localStorage.setItem("token", token);
+    localStorage.setItem("refreshToken", refreshToken);
+  },
+  remove: () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
+  },
+};
+
 export const pasreQuery = (location) => {
   const settings = {
     arrayFormat: "comma",
@@ -29,40 +44,45 @@ export const pasreQuery = (location) => {
   return qs.parse(location.search, settings);
 };
 
-export const useRefCallback = (value) => {
-  const [bounding, setbounding] = React.useState({});
+export const isAuthorized = () => {
+  const { token, refreshToken } = authTokens.get();
 
-  const ref = React.useCallback((node) => {
-    if (!!node) {
-      setbounding(node.getBoundingClientRect());
+  try {
+    decode(token);
+    const { exp } = decode(refreshToken);
+    if (Date.now() / 1000 > exp) {
+      return false;
     }
-  }, []);
+  } catch (err) {
+    return false;
+  }
 
-  return [ref, bounding];
+  return true;
 };
 
 export const sortByLastMessage = (a, b) => {
   return b.lastMessage.createdAt - a.lastMessage.createdAt;
 };
 
-export const formatDate = (date, prefix) => {
+export const diffTime = (date, diff = "days") => {
+  return moment().diff(+date, diff);
+};
+
+export const formatDate = (date, format = "HH:mm") => {
   if (date) {
-    const currentDate = moment();
-    const formatDate = moment(+date);
+    return moment(+date).format(format);
+  }
+};
 
-    const getFormat = (diff) => {
-      if (diff >= 5) {
-        return "DD.MM.YY";
-      } else {
-        return "HH:mm";
-      }
-    };
+export const renderDiffTimeLabel = (date) => {
+  const timeDiff = diffTime(+date);
 
-    const format = getFormat(currentDate.diff(formatDate, "days"));
-
-    if (prefix) {
-      return prefix + formatDate.format(format);
-    }
-    return formatDate.format(format);
+  switch (timeDiff) {
+    case 0:
+      return "Today";
+    case 1:
+      return "Yesterday";
+    default:
+      return formatDate(date, "MMMM D");
   }
 };
