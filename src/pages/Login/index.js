@@ -9,10 +9,9 @@ import {
 import { Link } from "react-router-dom";
 import { useMutation } from "@apollo/react-hooks";
 import { REGISTER, LOGIN } from "graphql/mutations";
-import { connect } from "react-redux";
-import { dispatchLogin } from "redux/actions";
 import { makeStyles } from "@material-ui/core/styles";
 import { wsLink } from "../../client";
+import { authTokens } from "utils/index";
 
 const useStyles = makeStyles((theme) => ({
   Login: {
@@ -41,7 +40,7 @@ const Login = (props) => {
     if (isRegister) {
       props.history.push("/login");
     } else {
-      await props.dispatchLogin(data);
+      authTokens.set(data);
       props.history.push("/me");
     }
     setErrors({});
@@ -147,6 +146,4 @@ const Login = (props) => {
   );
 };
 
-export default connect(null, (dispatch) => ({
-  dispatchLogin: (data) => dispatch(dispatchLogin(data)),
-}))(Login);
+export default Login;

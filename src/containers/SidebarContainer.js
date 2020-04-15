@@ -17,10 +17,8 @@ import {
 import { pasreQuery } from "utils/index";
 import Sidebar from "components/Sidebar";
 import { get } from "lodash-es";
-import { sortByLastMessage } from "utils/index";
+import { sortByLastMessage, authTokens } from "utils/index";
 import { useQuery, useLazyQuery, useMutation } from "@apollo/react-hooks";
-import { store } from "redux/store";
-import { dispatchLogout } from "redux/actions";
 import { wsLink } from "client";
 
 const SidebarContainer = (props) => {
@@ -35,7 +33,7 @@ const SidebarContainer = (props) => {
     onCompleted: async () => {
       wsLink.subscriptionClient.client.onclose();
       client.resetStore();
-      store.dispatch(dispatchLogout());
+      authTokens.remove();
       props.history.push("/login");
     },
   });

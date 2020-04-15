@@ -5,8 +5,6 @@ import { ApolloLink, split } from "apollo-link";
 import { InMemoryCache } from "apollo-cache-inmemory";
 import { onError } from "apollo-link-error";
 import { getMainDefinition } from "apollo-utilities";
-// import { store } from "./redux/store";
-// import { dispatchLogout } from "redux/actions";
 import { authTokens } from "utils/index";
 
 const httpLink = new HttpLink({
@@ -19,8 +17,8 @@ export const wsLink = new WebSocketLink({
     reconnect: true,
     connectionParams: () => {
       const { token, refreshToken } = authTokens.get();
-      console.log("connectionParams token", token);
-      console.log("connectionParams refreshToken", refreshToken);
+      // console.log("connectionParams token", token);
+      // console.log("connectionParams refreshToken", refreshToken);
       return {
         "x-token": token,
         "x-refresh-token": refreshToken,
@@ -72,7 +70,7 @@ const errorMiddleware = onError(({ graphQLErrors, networkError }) => {
       if (
         ["UNAUTHENTICATED", "INTERNAL_SERVER_ERROR"].includes(extensions.code) // "INTERNAL_SERVER_ERROR"
       ) {
-        // store.dispatch(dispatchLogout());
+        // authTokens.remove()
       }
     });
 

@@ -4,18 +4,14 @@ import { ApolloProvider } from "@apollo/react-hooks";
 import { client } from "./client";
 import { ThemeProvider } from "@material-ui/core";
 import { theme } from "./theme";
-import { Provider as ReduxProvider } from "react-redux";
-import { store } from "redux/store";
 import App from "./App";
 import * as serviceWorker from "./serviceWorker";
 
 render(
   <ApolloProvider client={client}>
-    <ReduxProvider store={store}>
-      <ThemeProvider theme={theme}>
-        <App />
-      </ThemeProvider>
-    </ReduxProvider>
+    <ThemeProvider theme={theme}>
+      <App />
+    </ThemeProvider>
   </ApolloProvider>,
   document.getElementById("root")
 );

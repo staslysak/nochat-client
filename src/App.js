@@ -7,7 +7,6 @@ import {
 } from "react-router-dom";
 import { CssBaseline } from "@material-ui/core";
 import Loadable from "react-loadable";
-import { connect } from "react-redux";
 import { isAuthorized } from "utils/index";
 
 const createLoadableComponent = (pathResolver) => {
@@ -54,7 +53,7 @@ const publicRoutes = [
   },
 ];
 
-const App = (props) => {
+const App = () => {
   return (
     <>
       <CssBaseline />
@@ -66,14 +65,14 @@ const App = (props) => {
           {publicRoutes.map((route) => (
             <Route key={route.path} {...route} />
           ))}
+          <Route
+            path="*"
+            render={() => <Redirect to={isAuthorized() ? "/me" : "/login"} />}
+          />
         </Switch>
-        <Route
-          path="*"
-          render={() => <Redirect to={isAuthorized() ? "/me" : "/login"} />}
-        />
       </Router>
     </>
   );
 };
 
-export default connect(({ auth: { isAuthorized } }) => ({ isAuthorized }))(App);
+export default App;
