@@ -1,5 +1,11 @@
 import React from "react";
-import { DIRECTS, DIRECT_LAST_MESSAGE } from "graphql/queries";
+import {
+  DIRECTS,
+  DIRECT_LAST_MESSAGE,
+  CURRENT_USER,
+  USERS,
+} from "graphql/queries";
+import { DELETE_DIRECT, LOGOUT } from "graphql/mutations";
 import {
   NEW_MESSAGE_SUBSCRIPTION,
   NEW_DIRECT_SUBSCRIPTION,
@@ -12,30 +18,58 @@ import { pasreQuery } from "utils/index";
 import Sidebar from "components/Sidebar";
 import { get } from "lodash-es";
 import { sortByLastMessage } from "utils/index";
-import { useSibebarFetch } from "hooks/index";
+import { useQuery, useLazyQuery, useMutation } from "@apollo/react-hooks";
+import { store } from "redux/store";
+import { dispatchLogout } from "redux/actions";
+import { wsLink } from "client";
 
 const SidebarContainer = (props) => {
+  const { data: user } = useQuery(CURRENT_USER);
   const {
-    queries: { user, directs },
-    lazyQueries: {
-      searchUsers: [searchUsers, searchUsersData],
+    data: directs,
+    subscribeToMore: subscribeToMoreDirects,
+    client,
+  } = useQuery(DIRECTS);
+  const [searchUsers, { data: users }] = useLazyQuery(USERS);
+  const [logout] = useMutation(LOGOUT, {
+    onCompleted: async () => {
+      wsLink.subscriptionClient.client.onclose();
+      store.dispatch(dispatchLogout());
+      props.history.push("/login");
     },
-    mutations: { logout, connect, disconnect, deleteDirect },
-  } = useSibebarFetch();
+  });
 
+  const [deleteDirect] = useMutation(DELETE_DIRECT);
+
+  const currentUser = get(user, "currentUser", {});
   const chatId = pasreQuery(props.location).p;
-
   const [typings, setTypings] = React.useState({});
 
-  const subscribeToNewMessage = (chatId) =>
-    directs.subscribeToMore({
+  React.useEffect(() => {
+    wsLink.subscriptionClient.tryReconnect();
+  }, []);
+
+  const subscribeToUserTyping = (chatId) => {
+    return subscribeToMoreDirects({
+      document: USER_TYPING_SUBSCRIPTION,
+      variables: { chatId },
+      updateQuery: (prev, { subscriptionData }) => {
+        if (!subscriptionData.data) return prev;
+        const { userTyping } = subscriptionData.data;
+        setTypings({ ...typings, [chatId]: userTyping });
+        return prev;
+      },
+    });
+  };
+
+  const subscribeToNewMessage = (chatId) => {
+    return subscribeToMoreDirects({
       document: NEW_MESSAGE_SUBSCRIPTION,
       variables: { chatId },
       updateQuery: (prev, { subscriptionData }) => {
         if (!subscriptionData.data) return prev;
 
         const { newMessage } = subscriptionData.data;
-        const currentUser = get(user, "data.currentUser");
         const unread = newMessage.userId !== currentUser.id ? 1 : 0;
 
         const directs = prev.directs
@@ -54,37 +88,24 @@ const SidebarContainer = (props) => {
         return { directs };
       },
     });
-
-  const subscribeToNewDirect = () => {
-    return directs.subscribeToMore({
-      document: NEW_DIRECT_SUBSCRIPTION,
-      updateQuery: (prev, { subscriptionData }) => {
-        if (!subscriptionData.data) return prev;
-        const { newDirect } = subscriptionData.data;
-        const directs = prev.directs.concat(newDirect).sort(sortByLastMessage);
-        return { directs };
-      },
-    });
   };
 
   const subscribeToDeleteMessage = (chatId) => {
-    return directs.subscribeToMore({
+    return subscribeToMoreDirects({
       document: DELETE_MESSAGE_SUBSCRIPTION,
       variables: { chatId },
       updateQuery: async (prev, { subscriptionData }) => {
         if (!subscriptionData.data) return prev;
-
-        const currentUser = get(user, "data.currentUser");
         const { deleteMessage } = subscriptionData.data;
 
-        return await directs.client
+        return await client
           .query({
             query: DIRECT_LAST_MESSAGE,
             variables: { chatId },
             fetchPolicy: "no-cache",
           })
           .then(({ data }) => {
-            const directsData = [...prev.directs].map((direct) => {
+            const directs = prev.directs.map((direct) => {
               const unread = deleteMessage.userId !== currentUser.id ? 1 : 0;
 
               if (direct.lastMessage.id === deleteMessage.id) {
@@ -98,55 +119,69 @@ const SidebarContainer = (props) => {
               return direct;
             });
 
-            directs.client.writeQuery({
-              query: DIRECTS,
-              data: { directs: directsData },
-            });
+            client.writeQuery({ query: DIRECTS, data: { directs } });
 
-            return { directs: directsData };
+            return { directs };
           });
       },
     });
   };
 
-  const subscribeToDeleteDirect = () => {
-    return directs.subscribeToMore({
-      document: DELETE_DIRECT_SUBSCRIPTION,
-      updateQuery: async (prev, { subscriptionData }) => {
-        if (!subscriptionData.data) return prev;
-        const { deleteDirect } = subscriptionData.data;
+  React.useEffect(() => {
+    const subscribeToDeleteDirect = () => {
+      return subscribeToMoreDirects({
+        document: DELETE_DIRECT_SUBSCRIPTION,
+        updateQuery: async (prev, { subscriptionData }) => {
+          if (!subscriptionData.data) return prev;
+          const { deleteDirect } = subscriptionData.data;
 
-        const directsData = prev.directs.filter(
-          (direct) => direct.id !== deleteDirect.id
-        );
+          const directs = prev.directs.filter(
+            ({ id }) => id !== deleteDirect.id
+          );
 
-        directs.client.writeQuery({
-          query: DIRECTS,
-          data: { directs: directsData },
-        });
+          client.writeQuery({
+            query: DIRECTS,
+            data: { directs },
+          });
 
-        return { directs: directsData };
-      },
-    });
-  };
+          return { directs };
+        },
+      });
+    };
 
-  const subscribeToOnlineUsers = () => {
-    return directs.subscribeToMore({
-      document: ONLINE_USER_SUBSCRIPTION,
-    });
-  };
+    const unsubscribe = subscribeToDeleteDirect();
+    return () => unsubscribe();
+  }, []);
 
-  const subscribeToUserTyping = (chatId) =>
-    directs.subscribeToMore({
-      document: USER_TYPING_SUBSCRIPTION,
-      variables: { chatId },
-      updateQuery: (prev, { subscriptionData }) => {
-        if (!subscriptionData.data) return prev;
-        const { userTyping } = subscriptionData.data;
-        setTypings({ ...typings, [chatId]: userTyping });
-        return prev;
-      },
-    });
+  React.useEffect(() => {
+    const subscribeToNewDirect = () => {
+      return subscribeToMoreDirects({
+        document: NEW_DIRECT_SUBSCRIPTION,
+        updateQuery: (prev, { subscriptionData }) => {
+          if (!subscriptionData.data) return prev;
+          const { newDirect } = subscriptionData.data;
+          const directs = prev.directs
+            .concat(newDirect)
+            .sort(sortByLastMessage);
+          return { directs };
+        },
+      });
+    };
+
+    const unsubscribe = subscribeToNewDirect();
+    return () => unsubscribe();
+  }, []);
+
+  React.useEffect(() => {
+    const subscribeToOnlineUsers = () => {
+      return subscribeToMoreDirects({
+        document: ONLINE_USER_SUBSCRIPTION,
+      });
+    };
+
+    const unsubscribe = subscribeToOnlineUsers();
+    return () => unsubscribe();
+  }, []);
 
   const onSearch = (username) => searchUsers({ variables: { username } });
 
@@ -158,23 +193,17 @@ const SidebarContainer = (props) => {
     <Sidebar
       chatId={chatId}
       typings={typings}
-      directs={get(directs, "data.directs", []).sort(sortByLastMessage)}
-      users={get(searchUsersData, "data.users")}
-      currentUser={get(user, "data.currentUser", {})}
-      directslength={get(directs, "data.directs.length")}
+      directs={get(directs, "directs", []).sort(sortByLastMessage)}
+      users={get(users, "users")}
+      currentUser={currentUser}
       onLogout={logout}
-      onConnect={connect}
       onSearch={onSearch}
-      onDisconnect={disconnect}
       onDeleteDirect={onDeleteDirect}
-      subscribeToNewDirect={subscribeToNewDirect}
       subscribeToNewMessage={subscribeToNewMessage}
-      subscribeToDeleteDirect={subscribeToDeleteDirect}
       subscribeToDeleteMessage={subscribeToDeleteMessage}
-      subscribeToOnlineUsers={subscribeToOnlineUsers}
       subscribeToUserTyping={subscribeToUserTyping}
     />
   );
 };
 
-export default React.memo(SidebarContainer);
+export default SidebarContainer;

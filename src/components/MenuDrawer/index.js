@@ -1,5 +1,4 @@
 import React from "react";
-import { Link } from "react-router-dom";
 import {
   List,
   ListItem,
@@ -9,36 +8,24 @@ import {
   Backdrop,
 } from "@material-ui/core";
 import Avatar from "components/Avatar";
-import {
-  // Group as GroupIcon,
-  Settings as SettingsIcon,
-  // TouchApp as TouchAppIcon,
-} from "@material-ui/icons";
+import { Settings as SettingsIcon } from "@material-ui/icons";
 import { useStyles } from "./styles";
 
 export const menuSchema = [
-  // {
-  //   title: "New Group",
-  //   link: "/create_team",
-  //   action: ({ onToggle }) => onToggle,
-  //   icon: <GroupIcon />,
-  // },
-  // {
-  //   title: "New Channel",
-  //   link: "/create_channel",
-  //   action: ({ onToggle }) => onToggle,
-  //   icon: <TouchAppIcon />,
-  // },
   {
     title: "Settings",
     link: "/settings",
-    action: ({ onToggle }) => onToggle,
     icon: <SettingsIcon />,
   },
 ];
 
-const MenuDrawer = ({ open, user, ...props }) => {
+const MenuDrawer = ({ user = {}, open, ...props }) => {
   const classes = useStyles();
+  // const open = false;
+
+  // const [open, setOpen] = React.useState(false);
+
+  // const handleMenuToggle = () => setOpen(!open);
 
   return (
     <>
@@ -57,26 +44,27 @@ const MenuDrawer = ({ open, user, ...props }) => {
             </ListItem>
           </List>
           <List>
-            {menuSchema.map(({ title, link, action, icon }) => (
+            {/* {menuSchema.map(({ title, link, icon }) => (
               <ListItem
                 key={title}
                 button
                 to={link}
                 className={classes.MenuDrawer_listItem}
                 component={link ? Link : "div"}
-                onClick={action ? action(props) : undefined}
+                onClick={props.onClose}
               >
                 {icon}
-                <Typography variant="body2" align={!!icon ? "left" : "center"}>
-                  {title}
-                </Typography>
+                <Typography variant="body2">{title}</Typography>
               </ListItem>
-            ))}
+            ))} */}
             <ListItem
               button
               className={classes.MenuDrawer_listItem}
               component="div"
-              onClick={props.onLogout}
+              onClick={() => {
+                props.onLogout();
+                props.onClose();
+              }}
             >
               <Typography variant="body2" align="center">
                 Log Out
@@ -87,11 +75,11 @@ const MenuDrawer = ({ open, user, ...props }) => {
       </Slide>
       <Backdrop
         open={open}
-        onClick={props.onToggle}
+        onClick={props.onClose}
         className={classes.MenuDrawer_backdrop}
       />
     </>
   );
 };
 
-export default React.memo(MenuDrawer);
+export default MenuDrawer;

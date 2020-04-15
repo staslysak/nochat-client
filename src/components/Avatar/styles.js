@@ -8,4 +8,8 @@ export const useStyles = makeStyles((theme) => ({
     textTransform: "uppercase",
     color: theme.palette.common.white,
   },
+  Avatar_small: {
+    width: 30,
+    height: 30,
+  },
 }));

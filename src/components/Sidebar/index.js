@@ -13,70 +13,71 @@ const Sidebar = (props) => {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
 
-  const renderUsers = (data) => {
+  const renderDirectsList = (data, addProps = {}) => {
     return data ? (
-      <StyledList subheader="Global search">
-        {data.map((user) => (
-          <UserItem
-            key={user.id}
-            user={user}
-            link={`/?p=${user.id}`}
-            onClick={() => setSearch("")}
+      <StyledList disablePadding>
+        {data.map((direct) => (
+          <DirectItem
+            key={direct.id}
+            direct={direct}
+            user={direct.user}
+            typing={
+              props.typings[direct.id] === direct.user.username
+                ? props.typings[direct.id]
+                : ""
+            }
+            link={`/me?p=${direct.user.id}`}
+            selected={direct.user.id === props.chatId}
+            onDelete={props.onDeleteDirect}
+            subscribeToUserTyping={props.subscribeToUserTyping}
+            subscribeToNewMessage={props.subscribeToNewMessage}
+            subscribeToDeleteMessage={props.subscribeToDeleteMessage}
+            {...addProps}
           />
         ))}
       </StyledList>
     ) : null;
   };
 
-  const renderDirects = (data) => {
-    return data.map((direct) => (
-      <DirectItem
-        key={direct.id}
-        direct={direct}
-        user={direct.user}
-        typing={
-          props.typings[direct.id] === direct.user.username
-            ? props.typings[direct.id]
-            : ""
-        }
-        link={`/?p=${direct.user.id}`}
-        selected={direct.user.id === props.chatId}
-        onDelete={props.onDeleteDirect}
-        subscribeToUserTyping={props.subscribeToUserTyping}
-        subscribeToNewMessage={props.subscribeToNewMessage}
-        subscribeToDeleteMessage={props.subscribeToDeleteMessage}
-      />
-    ));
+  const renderDirects = () => {
+    if (search.length) {
+      let directsMatch = [];
+
+      if (props.directs && props.directs.length) {
+        directsMatch = props.directs.filter(({ user }) =>
+          user.username.startsWith(search)
+        );
+      }
+
+      const directsMatchIds = directsMatch.map(({ user }) => user.id);
+
+      return (
+        <>
+          {renderDirectsList(directsMatch, {
+            selected: false,
+            onClick: () => setSearch(""),
+          })}
+          {props.users && props.users.length ? (
+            <StyledList subheader="Global search" disablePadding>
+              {props.users.map(
+                (user) =>
+                  !directsMatchIds.includes(user.id) && (
+                    <UserItem
+                      key={user.id}
+                      user={user}
+                      link={`/me?p=${user.id}`}
+                      onClick={() => setSearch("")}
+                    />
+                  )
+              )}
+            </StyledList>
+          ) : null}
+        </>
+      );
+    }
+
+    return renderDirectsList(props.directs);
   };
-
-  React.useEffect(() => {
-    setSearch("");
-  }, [props.chatId]);
-
-  React.useEffect(() => {
-    const unsubscribe = props.subscribeToNewDirect();
-    return () => unsubscribe();
-  }, []);
-
-  React.useEffect(() => {
-    const unsubscribe = props.subscribeToDeleteDirect();
-    return () => unsubscribe();
-  }, []);
-
-  React.useEffect(() => {
-    const unsubscribe = props.subscribeToOnlineUsers();
-    console.log("subscribeToOnlineUsers");
-    return () => unsubscribe();
-  }, [props.subscribeToOnlineUsers]);
-
-  React.useEffect(() => {
-    props.onConnect();
-
-    window.addEventListener("beforeunload", (e) => {
-      e.preventDefault();
-      return props.onDisconnect();
-    });
-  }, []);
 
   const [debounce] = useDebouncedCallback(
     (value) => props.onSearch(value),
@@ -92,11 +93,12 @@ const Sidebar = (props) => {
 
   return (
     <div className={classes.Sidebar}>
+      {/* <MenuDrawer.Drawer /> */}
       <MenuDrawer
         open={open}
         user={props.currentUser}
+        onClose={handleMenuToggle}
         onLogout={props.onLogout}
-        onToggle={handleMenuToggle}
       />
       <div className={classes.Sidebar_main}>
         <div className={classes.Sidebar_header}>
@@ -113,9 +115,7 @@ const Sidebar = (props) => {
           />
         </div>
         <div className={classes.Sidebar_content}>
-          {!search.length
-            ? renderDirects(props.directs)
-            : renderUsers(props.users)}
+          {renderDirects(props.directs)}
         </div>
       </div>
     </div>

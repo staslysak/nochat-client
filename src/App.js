@@ -8,7 +8,6 @@ import {
 import { CssBaseline } from "@material-ui/core";
 import Loadable from "react-loadable";
 import { connect } from "react-redux";
-import Layout from "components/Layout";
 import { isAuthorized } from "utils/index";
 
 const createLoadableComponent = (pathResolver) => {
@@ -21,22 +20,27 @@ const createLoadableComponent = (pathResolver) => {
   });
 };
 
-const privatRoutes = [
+// const privatRoutes = [
+//   {
+//     path: "/",
+//     exact: false,
+//     component: createLoadableComponent(() => import("./pages/Home")),
+//   },
+//   {
+//     path: "/verify",
+//     exact: true,
+//     component: createLoadableComponent(() => import("./pages/VerifyUser")),
+//   },
+// ];
+
+const publicRoutes = [
   {
-    path: "/",
+    path: "/me",
     exact: false,
     component: createLoadableComponent(() => import("./pages/Home")),
   },
   {
-    path: "/verify",
-    exact: true,
-    component: createLoadableComponent(() => import("./pages/VerifyUser")),
-  },
-];
-
-const publicRoutes = [
-  {
-    path: "/(|registration)",
+    path: "/(login|registration)",
     exact: true,
     component: createLoadableComponent(() => import("./pages/Login")),
   },
@@ -45,7 +49,10 @@ const publicRoutes = [
     exact: true,
     component: createLoadableComponent(() => import("./pages/VerifyUser")),
   },
-  { path: "*", component: Redirect },
+  {
+    path: "*",
+    component: () => <Redirect to={isAuthorized() ? "/me" : "/login"} />,
+  },
 ];
 
 const App = (props) => {
@@ -53,19 +60,11 @@ const App = (props) => {
     <>
       <CssBaseline />
       <Router>
-        {isAuthorized() ? (
-          <Layout>
-            {privatRoutes.map((route) => (
-              <Route key={route.path} {...route} />
-            ))}
-          </Layout>
-        ) : (
-          <Switch>
-            {publicRoutes.map((route) => (
-              <Route key={route.path} {...route} />
-            ))}
-          </Switch>
-        )}
+        <Switch>
+          {publicRoutes.map((route) => (
+            <Route key={route.path} {...route} />
+          ))}
+        </Switch>
       </Router>
     </>
   );

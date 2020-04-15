@@ -42,7 +42,7 @@ const Login = (props) => {
       props.history.push("/login");
     } else {
       await props.dispatchLogin(data);
-      props.history.push("/");
+      props.history.push("/me");
     }
     setErrors({});
   };

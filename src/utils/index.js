@@ -86,3 +86,18 @@ export const renderDiffTimeLabel = (date) => {
       return formatDate(date, "MMMM D");
   }
 };
+
+export const renderTimeline = (messages) => {
+  const timeline = {};
+
+  if (messages.length) {
+    messages.forEach(({ createdAt }, idx) => {
+      const timeDiff = diffTime(createdAt, "days");
+      if (timeline[timeDiff] === undefined) {
+        timeline[timeDiff] = idx;
+      }
+    });
+  }
+
+  return timeline;
+};

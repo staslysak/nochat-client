@@ -9,7 +9,7 @@ export const { dispatchLogout } = createActions({
   DISPATCH_LOGOUT: (isAuthorized = false) => ({ isAuthorized }),
 });
 
-const defaultState = { isAuthorized: false };
+const defaultState = { isAuthorized: !!localStorage.getItem("token") };
 
 const authReducer = handleActions(
   {

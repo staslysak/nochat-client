@@ -1,6 +1,11 @@
 import React from "react";
 import { ListItem, ListItemText, Divider } from "@material-ui/core";
-import { formatDate, diffTime, renderDiffTimeLabel } from "utils/index";
+import {
+  formatDate,
+  diffTime,
+  renderDiffTimeLabel,
+  renderTimeline,
+} from "utils/index";
 import Avatar from "components/Avatar";
 import ChatWindow from "components/ChatWindow";
 import ChatInput from "components/ChatWindow/ChatInput";
@@ -10,6 +15,7 @@ import { DirectFallback } from "components/Fallback";
 import Typing from "components/Typing";
 import { useStyles } from "./styles";
 import cx from "classnames";
+
 // import VisibilitySenson from "react-visibility-sensor";
 // <VisibilitySenson
 //   offset={{ top: 32, bottom: 32 }}
@@ -22,48 +28,10 @@ import cx from "classnames";
 //   if (isVisible && message.unread) props.onReadMessage(message.id);
 // };
 
-const renderTimeline = (data) => {
-  const timeline = {};
-
-  if (data) {
-    [...data].reverse().forEach(({ createdAt }, idx) => {
-      if (!timeline[diffTime(createdAt, "days")]) {
-        timeline[diffTime(createdAt, "days")] = idx;
-      }
-    });
-  }
-  return timeline;
-};
-
 const DirectChat = (props) => {
   const classes = useStyles();
-  const timeline = renderTimeline(props.messages);
+  const timeline = renderTimeline([...props.messages].reverse());
   const [send, setSend] = React.useState(false);
-
-  React.useEffect(() => {
-    const unsubsribe = props.subscribeToUserTyping();
-    return () => unsubsribe();
-  }, [props.subscribeToUserTyping]);
-
-  React.useEffect(() => {
-    const unsubsribe = props.subscribeToNewMessage();
-    return () => unsubsribe();
-  }, [props.subscribeToNewMessage]);
-
-  React.useEffect(() => {
-    const unsubsribe = props.subscribeToDeleteMessage();
-    return () => unsubsribe();
-  }, [props.subscribeToDeleteMessage]);
-
-  React.useEffect(() => {
-    const unsubsribe = props.subscribeToDeleteDirect();
-    return () => unsubsribe();
-  }, [props.subscribeToDeleteDirect]);
-
-  React.useEffect(() => {
-    const unsubsribe = props.subscribeToNewDirect();
-    return () => unsubsribe();
-  }, []);
 
   const handleChange = () => {
     if (props.chatId) {
@@ -85,7 +53,7 @@ const DirectChat = (props) => {
 
   const renderMessages = React.useCallback(
     (messages) =>
-      messages ? (
+      messages.length ? (
         [...messages].reverse().map((message, idx) => {
           const timeDiff = diffTime(message.createdAt, "days");
 
@@ -110,7 +78,7 @@ const DirectChat = (props) => {
       ) : (
         <DirectFallback />
       ),
-    [props.chatId, props.messages]
+    [props.chatId, props.user.id, props.messages, props.onDeleteMessage]
   );
 
   return (

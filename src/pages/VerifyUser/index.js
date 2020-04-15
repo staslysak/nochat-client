@@ -15,7 +15,7 @@ const VerifyUser = (props) => {
       .catch((err) => {
         props.dispatchLogout();
       })
-      .finally(() => props.history.push("/"));
+      .finally(() => props.history.push("/me"));
   }, [props, verifyUser]);
 
   return null;

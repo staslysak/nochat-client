@@ -62,22 +62,6 @@ export const LOGOUT = gql`
   }
 `;
 
-export const SET_ONLINE = gql`
-  mutation connect {
-    connect {
-      id
-    }
-  }
-`;
-
-export const SET_OFFLINE = gql`
-  mutation disconnect {
-    disconnect {
-      id
-    }
-  }
-`;
-
 export const USER_TYPING = gql`
   mutation userTyping($chatId: Int!, $username: String) {
     userTyping(chatId: $chatId, username: $username)

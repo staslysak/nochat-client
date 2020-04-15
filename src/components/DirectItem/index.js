@@ -43,6 +43,7 @@ const DirectItem = (props) => {
         primary={props.user.username}
         secondary={props.direct.lastMessage.text}
         date={props.direct.lastMessage.createdAt}
+        onClick={props.onClick}
         onContextMenu={handleOpen}
       />
       <DirectItemMenu

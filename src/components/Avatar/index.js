@@ -2,6 +2,7 @@ import React from "react";
 import { Avatar as MuiAvarat, Badge } from "@material-ui/core";
 import { withStyles } from "@material-ui/core/styles";
 import { useStyles } from "./styles";
+import cx from "classnames";
 
 const StyledBadge = withStyles((theme) => ({
   badge: {
@@ -32,7 +33,7 @@ const StyledBadge = withStyles((theme) => ({
   },
 }))(Badge);
 
-const Avatar = ({ alt = "", src, ...props }) => {
+const Avatar = ({ alt = "", src, online, ...props }) => {
   const classes = useStyles();
   const name = alt
     .split(" ")
@@ -48,12 +49,14 @@ const Avatar = ({ alt = "", src, ...props }) => {
         horizontal: "right",
       }}
       variant="dot"
-      invisible={!props.online}
+      invisible={!online}
     >
       <MuiAvarat
         src={src}
         // alt={alt}
-        className={classes.Avatar}
+        className={cx(classes.Avatar, {
+          [classes[`Avatar_${props.size}`]]: props.size,
+        })}
         style={{ background: src }}
       >
         {name}
