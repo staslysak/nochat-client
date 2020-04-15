@@ -3,22 +3,15 @@ import ChatItem from "components/ChatItem";
 import DirectItemMenu from "./DirectItemMenu";
 
 const DirectItem = (props) => {
-  React.useEffect(() => {
-    const unsubscribe = props.subscribeToUserTyping(props.direct.id);
-    return () => unsubscribe();
-  }, []);
-
-  React.useEffect(() => {
-    const unsubscribe = props.subscribeToDeleteMessage(props.direct.id);
-    return () => unsubscribe();
-  }, []);
-
-  React.useEffect(() => {
-    const unsubscribe = props.subscribeToNewMessage(props.direct.id);
-    return () => unsubscribe();
-  }, []);
-
   const [contextMenu, setContextMenu] = React.useState(null);
+
+  React.useEffect(() => {
+    const unsubscribes = props.subscribtions.map((subscribe) =>
+      subscribe(props.direct.id)
+    );
+    return () =>
+      unsubscribes.map((unsubscribe) => unsubscribe(props.direct.id));
+  }, [props.direct.id, props.subscribtions]);
 
   const handleOpen = (e) => {
     e.preventDefault();

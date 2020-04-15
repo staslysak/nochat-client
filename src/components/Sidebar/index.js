@@ -29,9 +29,7 @@ const Sidebar = (props) => {
             link={`/me?p=${direct.user.id}`}
             selected={direct.user.id === props.chatId}
             onDelete={props.onDeleteDirect}
-            subscribeToUserTyping={props.subscribeToUserTyping}
-            subscribeToNewMessage={props.subscribeToNewMessage}
-            subscribeToDeleteMessage={props.subscribeToDeleteMessage}
+            subscribtions={props.directSubscriptions}
             {...addProps}
           />
         ))}
@@ -93,7 +91,6 @@ const Sidebar = (props) => {
 
   return (
     <div className={classes.Sidebar}>
-      {/* <MenuDrawer.Drawer /> */}
       <MenuDrawer
         open={open}
         user={props.currentUser}

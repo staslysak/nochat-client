@@ -29,6 +29,7 @@ const SidebarContainer = (props) => {
     client,
   } = useQuery(DIRECTS);
   const [searchUsers, { data: users }] = useLazyQuery(USERS);
+  const [deleteDirect] = useMutation(DELETE_DIRECT);
   const [logout] = useMutation(LOGOUT, {
     onCompleted: async () => {
       wsLink.subscriptionClient.client.onclose();
@@ -38,96 +39,91 @@ const SidebarContainer = (props) => {
     },
   });
 
-  const [deleteDirect] = useMutation(DELETE_DIRECT);
-
-  const currentUser = get(user, "currentUser", {});
-  const chatId = pasreQuery(props.location).p;
   const [typings, setTypings] = React.useState({});
+  const currentUser = get(user, "currentUser", {});
+  const { p: chatId } = pasreQuery(props.location);
 
   React.useEffect(() => {
     wsLink.subscriptionClient.tryReconnect();
   }, []);
 
-  const subscribeToUserTyping = (chatId) => {
-    return subscribeToMoreDirects({
-      document: USER_TYPING_SUBSCRIPTION,
-      variables: { chatId },
-      updateQuery: (prev, { subscriptionData }) => {
-        if (!subscriptionData.data) return prev;
-        const { userTyping } = subscriptionData.data;
-        setTypings({ ...typings, [chatId]: userTyping });
-        return prev;
-      },
-    });
-  };
+  const directSubscriptions = [
+    (chatId) => {
+      return subscribeToMoreDirects({
+        document: USER_TYPING_SUBSCRIPTION,
+        variables: { chatId },
+        updateQuery: (prev, { subscriptionData }) => {
+          if (!subscriptionData.data) return prev;
+          const { userTyping } = subscriptionData.data;
+          setTypings({ ...typings, [chatId]: userTyping });
+          return prev;
+        },
+      });
+    },
+    (chatId) => {
+      return subscribeToMoreDirects({
+        document: NEW_MESSAGE_SUBSCRIPTION,
+        variables: { chatId },
+        updateQuery: (prev, { subscriptionData }) => {
+          if (!subscriptionData.data) return prev;
+          const { newMessage } = subscriptionData.data;
+          const unread = newMessage.userId !== currentUser.id ? 1 : 0;
 
-  const subscribeToNewMessage = (chatId) => {
-    return subscribeToMoreDirects({
-      document: NEW_MESSAGE_SUBSCRIPTION,
-      variables: { chatId },
-      updateQuery: (prev, { subscriptionData }) => {
-        if (!subscriptionData.data) return prev;
-
-        const { newMessage } = subscriptionData.data;
-        const unread = newMessage.userId !== currentUser.id ? 1 : 0;
-
-        const directs = prev.directs
-          .map((direct) => {
+          const directs = prev.directs.map((direct) => {
             if (direct.id === chatId) {
-              direct = {
+              return {
                 ...direct,
                 lastMessage: newMessage,
                 unread: direct.unread + unread,
               };
             }
             return direct;
-          })
-          .sort(sortByLastMessage);
-
-        return { directs };
-      },
-    });
-  };
-
-  const subscribeToDeleteMessage = (chatId) => {
-    return subscribeToMoreDirects({
-      document: DELETE_MESSAGE_SUBSCRIPTION,
-      variables: { chatId },
-      updateQuery: async (prev, { subscriptionData }) => {
-        if (!subscriptionData.data) return prev;
-        const { deleteMessage } = subscriptionData.data;
-
-        return await client
-          .query({
-            query: DIRECT_LAST_MESSAGE,
-            variables: { chatId },
-            fetchPolicy: "no-cache",
-          })
-          .then(({ data }) => {
-            const directs = prev.directs.map((direct) => {
-              const unread = deleteMessage.userId !== currentUser.id ? 1 : 0;
-
-              if (direct.lastMessage.id === deleteMessage.id) {
-                direct = {
-                  ...direct,
-                  lastMessage: data.directLastMessage,
-                  unread: direct.unread - unread,
-                };
-              }
-
-              return direct;
-            });
-
-            client.writeQuery({ query: DIRECTS, data: { directs } });
-
-            return { directs };
           });
-      },
-    });
-  };
 
-  React.useEffect(() => {
-    const subscribeToDeleteDirect = () => {
+          return { directs };
+        },
+      });
+    },
+    (chatId) => {
+      return subscribeToMoreDirects({
+        document: DELETE_MESSAGE_SUBSCRIPTION,
+        variables: { chatId },
+        updateQuery: async (prev, { subscriptionData }) => {
+          if (!subscriptionData.data) return prev;
+          const { deleteMessage } = subscriptionData.data;
+
+          return await client
+            .query({
+              query: DIRECT_LAST_MESSAGE,
+              variables: { chatId },
+              fetchPolicy: "no-cache",
+            })
+            .then(({ data }) => {
+              const directs = prev.directs.map((direct) => {
+                const unread = deleteMessage.userId !== currentUser.id ? 1 : 0;
+
+                if (direct.lastMessage.id === deleteMessage.id) {
+                  return {
+                    ...direct,
+                    lastMessage: data.directLastMessage,
+                    unread: direct.unread - unread,
+                  };
+                }
+
+                return direct;
+              });
+
+              client.writeQuery({ query: DIRECTS, data: { directs } });
+
+              return { directs };
+            });
+        },
+      });
+    },
+  ];
+
+  const subscribtions = [
+    () => {
       return subscribeToMoreDirects({
         document: DELETE_DIRECT_SUBSCRIPTION,
         updateQuery: async (prev, { subscriptionData }) => {
@@ -138,49 +134,33 @@ const SidebarContainer = (props) => {
             ({ id }) => id !== deleteDirect.id
           );
 
-          client.writeQuery({
-            query: DIRECTS,
-            data: { directs },
-          });
+          client.writeQuery({ query: DIRECTS, data: { directs } });
 
           return { directs };
         },
       });
-    };
-
-    const unsubscribe = subscribeToDeleteDirect();
-    return () => unsubscribe();
-  }, []);
-
-  React.useEffect(() => {
-    const subscribeToNewDirect = () => {
+    },
+    () => {
       return subscribeToMoreDirects({
         document: NEW_DIRECT_SUBSCRIPTION,
         updateQuery: (prev, { subscriptionData }) => {
           if (!subscriptionData.data) return prev;
-          const { newDirect } = subscriptionData.data;
-          const directs = prev.directs
-            .concat(newDirect)
-            .sort(sortByLastMessage);
+          const directs = prev.directs.concat(subscriptionData.data.newDirect);
           return { directs };
         },
       });
-    };
-
-    const unsubscribe = subscribeToNewDirect();
-    return () => unsubscribe();
-  }, []);
-
-  React.useEffect(() => {
-    const subscribeToOnlineUsers = () => {
+    },
+    () => {
       return subscribeToMoreDirects({
         document: ONLINE_USER_SUBSCRIPTION,
       });
-    };
+    },
+  ];
 
-    const unsubscribe = subscribeToOnlineUsers();
-    return () => unsubscribe();
-  }, []);
+  React.useEffect(() => {
+    const unsubscribes = subscribtions.map((subscribe) => subscribe());
+    return () => unsubscribes.map((unsubscribe) => unsubscribe());
+  }, [subscribtions]);
 
   const onSearch = (username) => searchUsers({ variables: { username } });
 
@@ -198,9 +178,7 @@ const SidebarContainer = (props) => {
       onLogout={logout}
       onSearch={onSearch}
       onDeleteDirect={onDeleteDirect}
-      subscribeToNewMessage={subscribeToNewMessage}
-      subscribeToDeleteMessage={subscribeToDeleteMessage}
-      subscribeToUserTyping={subscribeToUserTyping}
+      directSubscriptions={directSubscriptions}
     />
   );
 };

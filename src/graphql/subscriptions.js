@@ -6,6 +6,7 @@ export const NEW_MESSAGE_SUBSCRIPTION = gql`
       id
       text
       userId
+      chatId
       unread
       createdAt
     }
