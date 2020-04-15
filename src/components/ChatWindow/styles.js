@@ -34,12 +34,11 @@ const useStyles = makeStyles((theme) => ({
     "& .MuiInputBase-root": {
       fontSize: theme.typography.body2.fontSize,
     },
+    paddingLeft: theme.spacing(2),
   },
   ChatWindow_input: {
     height: "100%",
-    padding: `${theme.spacing(1)}px ${theme.spacing(1)}px ${theme.spacing(
-      0.5
-    )}px ${theme.spacing(2)}px`,
+    minHeight: 48,
     "& .MuiInputBase-inputMultiline": {
       "&::-webkit-scrollbar": { display: "none" },
     },

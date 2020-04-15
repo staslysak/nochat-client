@@ -34,6 +34,7 @@ const SidebarContainer = (props) => {
   const [logout] = useMutation(LOGOUT, {
     onCompleted: async () => {
       wsLink.subscriptionClient.client.onclose();
+      client.resetStore();
       store.dispatch(dispatchLogout());
       props.history.push("/login");
     },

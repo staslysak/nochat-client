@@ -20,25 +20,28 @@ const createLoadableComponent = (pathResolver) => {
   });
 };
 
-// const privatRoutes = [
-//   {
-//     path: "/",
-//     exact: false,
-//     component: createLoadableComponent(() => import("./pages/Home")),
-//   },
-//   {
-//     path: "/verify",
-//     exact: true,
-//     component: createLoadableComponent(() => import("./pages/VerifyUser")),
-//   },
-// ];
+const PrivateRoute = ({ component: Component, ...rest }) => (
+  <Route
+    {...rest}
+    render={(props) => {
+      return isAuthorized() ? (
+        <Component {...props} />
+      ) : (
+        <Redirect to="/login" />
+      );
+    }}
+  />
+);
 
-const publicRoutes = [
+const privateRoutes = [
   {
     path: "/me",
     exact: false,
     component: createLoadableComponent(() => import("./pages/Home")),
   },
+];
+
+const publicRoutes = [
   {
     path: "/(login|registration)",
     exact: true,
@@ -49,10 +52,6 @@ const publicRoutes = [
     exact: true,
     component: createLoadableComponent(() => import("./pages/VerifyUser")),
   },
-  {
-    path: "*",
-    component: () => <Redirect to={isAuthorized() ? "/me" : "/login"} />,
-  },
 ];
 
 const App = (props) => {
@@ -61,10 +60,17 @@ const App = (props) => {
       <CssBaseline />
       <Router>
         <Switch>
+          {privateRoutes.map((route) => (
+            <PrivateRoute key={route.path} {...route} />
+          ))}
           {publicRoutes.map((route) => (
             <Route key={route.path} {...route} />
           ))}
         </Switch>
+        <Route
+          path="*"
+          render={() => <Redirect to={isAuthorized() ? "/me" : "/login"} />}
+        />
       </Router>
     </>
   );
