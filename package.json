@@ -58,7 +58,5 @@
     "final-form": "^4.19.1",
     "react-final-form": "^6.4.0"
   },
-  "devDependencies": {
-    "redux-devtools-extension": "^2.13.8"
-  }
+  "devDependencies": {}
 }

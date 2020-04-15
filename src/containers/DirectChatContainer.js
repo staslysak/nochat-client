@@ -72,106 +72,27 @@ const DirectChatContainer = ({ userId }) => {
     }
   };
 
-  const subscribtions = [
-    () => {
-      try {
-        if (chatId) {
-          return chatMessagesData.subscribeToMore({
-            document: NEW_MESSAGE_SUBSCRIPTION,
-            variables: { chatId },
-            updateQuery: (prev, { subscriptionData }) => {
-              if (!subscriptionData.data) return prev;
-              const { newMessage } = subscriptionData.data;
-
-              return { messages: [newMessage, ...prev.messages] };
-            },
-          });
-        } else {
-          return () => {};
-        }
-      } catch (error) {
-        return () => {};
-      }
-    },
-
-    () => {
-      try {
-        if (chatId) {
-          return chatMessagesData.subscribeToMore({
-            document: DELETE_MESSAGE_SUBSCRIPTION,
-            variables: { chatId },
-            updateQuery: (prev, { subscriptionData }) => {
-              if (!subscriptionData.data) return prev;
-              const { deleteMessage } = subscriptionData.data;
-
-              const messages = prev.messages.filter(
-                ({ id }) => id !== deleteMessage.id
-              );
-
-              return { messages };
-            },
-          });
-        } else {
-          return () => {};
-        }
-      } catch (error) {
-        return () => {};
-      }
-    },
-    () => {
-      try {
-        if (chatId) {
-          return currentDirect.subscribeToMore({
-            document: DELETE_DIRECT_SUBSCRIPTION,
-            variables: { chatId },
-            updateQuery: (prev, { subscriptionData }) => {
-              if (!subscriptionData.data) return prev;
-              const { deleteDirect } = subscriptionData.data;
-
-              if (deleteDirect.id === chatId) {
-                return {
-                  currentDirect: { ...prev.currentDirect, direct: null },
-                };
-              }
-
-              return prev;
-            },
-          });
-        } else {
-          return () => {};
-        }
-      } catch (error) {
-        return () => {};
-      }
-    },
-    () => {
-      try {
-        if (chatId) {
-          return currentDirect.subscribeToMore({
-            document: USER_TYPING_SUBSCRIPTION,
-            variables: { chatId },
-            updateQuery: (prev, { subscriptionData }) => {
-              if (!subscriptionData.data) return prev;
-              const { userTyping } = subscriptionData.data;
-
-              typingUser.setUser(userTyping);
-
-              return prev;
-            },
-          });
-        } else {
-          return () => {};
-        }
-      } catch (error) {
-        return () => {};
-      }
-    },
-  ];
-
   React.useEffect(() => {
-    const unsubscribes = subscribtions.map((subscribe) => subscribe());
-    return () => unsubscribes.map((unsubscribe) => unsubscribe());
-  }, [subscribtions]);
+    const subscribeToNewMessage = () => {
+      try {
+        return chatMessagesData.subscribeToMore({
+          document: NEW_MESSAGE_SUBSCRIPTION,
+          variables: { chatId },
+          updateQuery: (prev, { subscriptionData }) => {
+            if (!subscriptionData.data) return prev;
+            const { newMessage } = subscriptionData.data;
+
+            return { messages: [newMessage, ...prev.messages] };
+          },
+        });
+      } catch (error) {
+        return () => {};
+      }
+    };
+
+    const unsubsribe = subscribeToNewMessage();
+    return () => unsubsribe();
+  }, [chatMessagesData.data, chatId]);
 
   React.useEffect(() => {
     const subscribeToNewDirect = () => {
@@ -195,6 +116,82 @@ const DirectChatContainer = ({ userId }) => {
     const unsubsribe = subscribeToNewDirect();
     return () => unsubsribe();
   }, [currentDirect]);
+
+  React.useEffect(() => {
+    const subscribeToDeleteMessage = () => {
+      try {
+        return chatMessagesData.subscribeToMore({
+          document: DELETE_MESSAGE_SUBSCRIPTION,
+          variables: { chatId },
+          updateQuery: (prev, { subscriptionData }) => {
+            if (!subscriptionData.data) return prev;
+            const { deleteMessage } = subscriptionData.data;
+
+            const messages = prev.messages.filter(
+              ({ id }) => id !== deleteMessage.id
+            );
+
+            return { messages };
+          },
+        });
+      } catch (error) {
+        return () => {};
+      }
+    };
+
+    const unsubsribe = subscribeToDeleteMessage();
+    return () => unsubsribe();
+  }, [chatMessagesData.data, chatId]);
+
+  React.useEffect(() => {
+    const subscribeToDeleteDirect = () => {
+      try {
+        return currentDirect.subscribeToMore({
+          document: DELETE_DIRECT_SUBSCRIPTION,
+          variables: { chatId },
+          updateQuery: (prev, { subscriptionData }) => {
+            if (!subscriptionData.data) return prev;
+            const { deleteDirect } = subscriptionData.data;
+
+            if (deleteDirect.id === chatId) {
+              return { currentDirect: { ...prev.currentDirect, direct: null } };
+            }
+
+            return prev;
+          },
+        });
+      } catch (error) {
+        return () => {};
+      }
+    };
+
+    const unsubsribe = subscribeToDeleteDirect();
+    return () => unsubsribe();
+  }, [currentDirect, chatId]);
+
+  React.useEffect(() => {
+    const subscribeToUserTyping = () => {
+      try {
+        return currentDirect.subscribeToMore({
+          document: USER_TYPING_SUBSCRIPTION,
+          variables: { chatId },
+          updateQuery: (prev, { subscriptionData }) => {
+            if (!subscriptionData.data) return prev;
+            const { userTyping } = subscriptionData.data;
+
+            typingUser.setUser(userTyping);
+
+            return prev;
+          },
+        });
+      } catch (error) {
+        return () => {};
+      }
+    };
+
+    const unsubsribe = subscribeToUserTyping();
+    return () => unsubsribe();
+  }, [currentDirect, chatId]);
 
   const onCreateMessage = async (text) => {
     if (!chatId) {

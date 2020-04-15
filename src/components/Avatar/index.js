@@ -33,13 +33,16 @@ const StyledBadge = withStyles((theme) => ({
   },
 }))(Badge);
 
-const Avatar = ({ alt = "", src, online, ...props }) => {
+const Avatar = ({ alt = "", src = "", online, ...props }) => {
   const classes = useStyles();
   const name = alt
     .split(" ")
     .slice(0, 2)
     .map((x) => x[0])
     .join("");
+
+  const urlRegex = /(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/;
+  const isUrl = urlRegex.test(src);
 
   return (
     <StyledBadge
@@ -52,12 +55,12 @@ const Avatar = ({ alt = "", src, online, ...props }) => {
       invisible={!online}
     >
       <MuiAvarat
-        src={src}
+        src={isUrl ? src : undefined}
         // alt={alt}
         className={cx(classes.Avatar, {
           [classes[`Avatar_${props.size}`]]: props.size,
         })}
-        style={{ background: src }}
+        style={{ background: !isUrl ? src : undefined }}
       >
         {name}
       </MuiAvarat>
