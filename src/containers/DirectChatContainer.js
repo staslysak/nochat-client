@@ -17,7 +17,7 @@ import {
 } from "graphql/mutations";
 import { get } from "lodash-es";
 import DirectChat from "components/DirectChat";
-import { useQuery, useLazyQuery, useMutation } from "@apollo/react-hooks";
+import { useQuery, useMutation } from "@apollo/react-hooks";
 import { useTyping } from "hooks/index";
 
 const DirectChatContainer = ({ userId }) => {
@@ -26,8 +26,10 @@ const DirectChatContainer = ({ userId }) => {
   });
 
   const currentUser = useQuery(CURRENT_USER);
-  const currentDirect = useQuery(CURRENT_DIRECT, { variables: { userId } });
-  const [chatMessages, chatMessagesData] = useLazyQuery(CHAT_MESSAGES);
+  const currentDirect = useQuery(CURRENT_DIRECT, {
+    variables: { userId },
+    skip: !userId,
+  });
   const [createDirect] = useMutation(CREATE_DIRECT);
   const [createMessage] = useMutation(CREATE_MESSAGE);
   const [deleteMessage] = useMutation(DELETE_MESSAGE);
@@ -38,18 +40,18 @@ const DirectChatContainer = ({ userId }) => {
   const self = get(currentUser, "data.currentUser", {});
   const recipient = get(currentDirect, "data.currentDirect.recipient", {});
   const chatId = get(currentDirect, "data.currentDirect.direct.id");
+
+  const chatMessagesData = useQuery(CHAT_MESSAGES, {
+    variables: { chatId },
+    skip: !chatId,
+  });
+
   const messages = chatId ? get(chatMessagesData, "data.messages") : [];
 
   const [typingUser, onTyping] = useTyping(
     { chatId, username: self.username },
     (variables) => userTyping({ variables })
   );
-
-  React.useEffect(() => {
-    if (chatId && userId) {
-      chatMessages({ variables: { chatId } });
-    }
-  }, [userId, chatId, chatMessages]);
 
   const loadMoreMessages = () => {
     if (chatMessagesData.data && state.hasMore && chatId) {
