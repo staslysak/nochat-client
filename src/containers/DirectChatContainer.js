@@ -1,5 +1,5 @@
 import React from "react";
-import { get } from "lodash-es";
+// import { get } from "lodash-es";
 import DirectChat from "components/DirectChat";
 import { useTyping } from "hooks/index";
 import {
@@ -36,16 +36,16 @@ const DirectChatContainer = ({ userId }) => {
   const [readMessage] = useReadMessageMutation();
   const [userTyping] = useUserTypingMutation();
 
-  const self = get(currentUser, "data.currentUser", {});
-  const recipient = get(currentDirect, "data.currentDirect.recipient", {});
-  const chatId = get(currentDirect, "data.currentDirect.direct.id");
+  const self = currentUser?.data?.currentUser ?? {};
+  const recipient = currentDirect?.data?.currentDirect?.recipient ?? {};
+  const chatId = currentDirect?.data?.currentDirect?.direct?.id ?? null;
 
   const chatMessagesData = useGetChatMessagesQuery({
     variables: { chatId },
     skip: !chatId,
   });
 
-  const messages = chatId ? get(chatMessagesData, "data.messages") : [];
+  const messages = chatId ? chatMessagesData?.data?.messages : [];
 
   const [typingUser, onTyping] = useTyping(
     { chatId, username: self.username },

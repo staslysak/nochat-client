@@ -21,15 +21,17 @@ export const stringifyQuery = (location, modifiers = {}) => {
 };
 
 export const authTokens = {
-  get: () => ({
-    token: localStorage.getItem("token"),
-    refreshToken: localStorage.getItem("refreshToken"),
-  }),
-  set: ({ token, refreshToken }) => {
-    localStorage.setItem("token", token);
-    localStorage.setItem("refreshToken", refreshToken);
+  get() {
+    return {
+      token: localStorage.getItem("token"),
+      refreshToken: localStorage.getItem("refreshToken"),
+    };
   },
-  remove: () => {
+  set(tokens) {
+    localStorage.setItem("token", tokens.token);
+    localStorage.setItem("refreshToken", tokens.refreshToken);
+  },
+  remove() {
     localStorage.removeItem("token");
     localStorage.removeItem("refreshToken");
   },

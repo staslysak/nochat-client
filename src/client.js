@@ -43,7 +43,7 @@ const afterwareLink = new ApolloLink((operation, forward) =>
   })
 );
 
-const authMiddleware = new ApolloLink((operation, forward) => {
+const authLink = new ApolloLink((operation, forward) => {
   operation.setContext(({ headers }) => {
     const { token, refreshToken } = authTokens.get();
     return {
@@ -80,7 +80,7 @@ const errorMiddleware = onError(({ graphQLErrors, networkError }) => {
 });
 
 const httpLinkWithMiddleware = errorMiddleware.concat(
-  afterwareLink.concat(authMiddleware.concat(httpLink))
+  afterwareLink.concat(authLink.concat(httpLink))
 );
 
 const link = split(
