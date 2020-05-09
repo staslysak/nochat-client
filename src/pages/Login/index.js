@@ -6,11 +6,10 @@ import {
   Typography,
   Link as MuiLink,
 } from "@material-ui/core";
+import { useLoginMutation, useRegisterMutation } from "graphql/generated.tsx";
 import { Link } from "react-router-dom";
-import { useMutation } from "@apollo/react-hooks";
-import { REGISTER, LOGIN } from "graphql/mutations";
 import { makeStyles } from "@material-ui/core/styles";
-import { wsLink } from "../../client";
+import { wsLink } from "client";
 import { authTokens } from "utils/index";
 
 const useStyles = makeStyles((theme) => ({
@@ -22,14 +21,22 @@ const useStyles = makeStyles((theme) => ({
     height: "100vh",
     width: "100vw",
   },
+  // Login: `
+  //   display: flex;
+  //   justify-content: center;
+  //   flex-direction: column;
+  //   align-items: center;
+  //   height: 100vh;
+  //   width: 100vw;
+  // `,
 }));
 
 const Login = (props) => {
   const classes = useStyles();
   const [values, setValues] = React.useState({});
   const [errors, setErrors] = React.useState({});
-  const [register] = useMutation(REGISTER);
-  const [login] = useMutation(LOGIN);
+  const [register] = useRegisterMutation();
+  const [login] = useLoginMutation();
   const isRegister = /\/registration/.test(props.location.pathname);
 
   const handleOnChange = ({ target: { name, value } }) => {

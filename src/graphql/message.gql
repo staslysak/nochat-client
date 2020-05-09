@@ -1,0 +1,39 @@
+mutation createMessage($chatId: Int, $text: String!) {
+  createMessage(chatId: $chatId, text: $text)
+}
+
+mutation deleteMessage($id: Int!) {
+  deleteMessage(id: $id)
+}
+
+mutation readMessage($id: Int!) {
+  readMessage(id: $id)
+}
+
+query getChatMessages($chatId: Int!, $offset: Int) {
+  messages(chatId: $chatId, offset: $offset) {
+    id
+    text
+    userId
+    unread
+    createdAt
+  }
+}
+
+subscription subNewMessage($chatId: Int!) {
+  newMessage(chatId: $chatId) {
+    id
+    text
+    userId
+    chatId
+    unread
+    createdAt
+  }
+}
+
+subscription subDeleteMessage($chatId: Int!) {
+  deleteMessage(chatId: $chatId) {
+    id
+    userId
+  }
+}

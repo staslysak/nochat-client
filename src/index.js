@@ -2,15 +2,17 @@ import React from "react";
 import { render } from "react-dom";
 import { ApolloProvider } from "@apollo/react-hooks";
 import { client } from "./client";
-import { ThemeProvider } from "@material-ui/core";
-import { theme } from "./theme";
+import { ThemeProvider, StylesProvider } from "@material-ui/core";
+import { theme, jss } from "./theme";
 import App from "./App";
 import * as serviceWorker from "./serviceWorker";
 
 render(
   <ApolloProvider client={client}>
     <ThemeProvider theme={theme}>
-      <App />
+      <StylesProvider jss={jss}>
+        <App />
+      </StylesProvider>
     </ThemeProvider>
   </ApolloProvider>,
   document.getElementById("root")

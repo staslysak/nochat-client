@@ -1,0 +1,11 @@
+schema: http://localhost:8081/graphql
+documents: "src/**/*.gql"
+generates:
+  ./src/graphql/generated.tsx:
+    plugins:
+      - typescript
+      - typescript-operations
+      - typescript-react-apollo
+    config:
+      withHOC: false
+      withHooks: true

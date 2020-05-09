@@ -4,9 +4,11 @@ import DirectChatContainer from "containers/DirectChatContainer";
 import Layout from "components/Layout";
 
 const Home = (props) => {
-  const { p } = pasreQuery(props.location);
+  const { p: userId } = pasreQuery(props.location);
 
-  return <Layout>{p ? <DirectChatContainer userId={p} /> : null}</Layout>;
+  return (
+    <Layout>{userId ? <DirectChatContainer userId={userId} /> : null}</Layout>
+  );
 };
 
 export default Home;

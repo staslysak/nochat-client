@@ -1,6 +1,9 @@
-import { createMuiTheme } from "@material-ui/core/styles";
+import { createMuiTheme, jssPreset } from "@material-ui/core/styles";
 import { grey as primary, blue as secondary } from "@material-ui/core/colors";
 import { lighten, darken } from "@material-ui/core/styles/colorManipulator";
+import { create } from "jss";
+import jssTemplate from "jss-plugin-template";
+
 // import defaultTheme from "@material-ui/core/styles/defaultTheme";
 
 const preferColorSchema = window.matchMedia("(prefers-color-scheme: dark)")
@@ -34,3 +37,7 @@ export const theme = createMuiTheme({
 // theme.palette.type === "dark"
 //   ? theme.lighten(theme.palette.background.default, 0.235)
 //   : theme.darken(theme.palette.background.default, 0.057),
+
+export const jss = create({
+  plugins: [jssTemplate(), ...jssPreset().plugins],
+});

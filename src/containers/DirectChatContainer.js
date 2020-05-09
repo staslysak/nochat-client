@@ -1,47 +1,46 @@
 import React from "react";
-import {
-  NEW_MESSAGE_SUBSCRIPTION,
-  NEW_DIRECT_SUBSCRIPTION,
-  DELETE_MESSAGE_SUBSCRIPTION,
-  DELETE_DIRECT_SUBSCRIPTION,
-  USER_TYPING_SUBSCRIPTION,
-} from "graphql/subscriptions";
-import { CURRENT_USER, CURRENT_DIRECT, CHAT_MESSAGES } from "graphql/queries";
-import {
-  CREATE_DIRECT,
-  CREATE_MESSAGE,
-  DELETE_MESSAGE,
-  DELETE_DIRECT,
-  READ_MESSAGE,
-  USER_TYPING,
-} from "graphql/mutations";
 import { get } from "lodash-es";
 import DirectChat from "components/DirectChat";
-import { useQuery, useMutation } from "@apollo/react-hooks";
 import { useTyping } from "hooks/index";
+import {
+  SubNewDirectDocument,
+  SubUserTypingDocument,
+  SubDeleteDirectDocument,
+  SubNewMessageDocument,
+  SubDeleteMessageDocument,
+  useCreateDirectMutation,
+  useDeleteDirectMutation,
+  useCreateMessageMutation,
+  useDeleteMessageMutation,
+  useReadMessageMutation,
+  useUserTypingMutation,
+  useCurrentUserQuery,
+  useCurrentDirectQuery,
+  useGetChatMessagesQuery,
+} from "graphql/generated.tsx";
 
 const DirectChatContainer = ({ userId }) => {
   const [state, setstate] = React.useState({
     hasMore: true,
   });
 
-  const currentUser = useQuery(CURRENT_USER);
-  const currentDirect = useQuery(CURRENT_DIRECT, {
+  const currentUser = useCurrentUserQuery();
+  const currentDirect = useCurrentDirectQuery({
     variables: { userId },
     skip: !userId,
   });
-  const [createDirect] = useMutation(CREATE_DIRECT);
-  const [createMessage] = useMutation(CREATE_MESSAGE);
-  const [deleteMessage] = useMutation(DELETE_MESSAGE);
-  const [deleteDirect] = useMutation(DELETE_DIRECT);
-  const [readMessage] = useMutation(READ_MESSAGE);
-  const [userTyping] = useMutation(USER_TYPING);
+  const [createDirect] = useCreateDirectMutation();
+  const [deleteDirect] = useDeleteDirectMutation();
+  const [createMessage] = useCreateMessageMutation();
+  const [deleteMessage] = useDeleteMessageMutation();
+  const [readMessage] = useReadMessageMutation();
+  const [userTyping] = useUserTypingMutation();
 
   const self = get(currentUser, "data.currentUser", {});
   const recipient = get(currentDirect, "data.currentDirect.recipient", {});
   const chatId = get(currentDirect, "data.currentDirect.direct.id");
 
-  const chatMessagesData = useQuery(CHAT_MESSAGES, {
+  const chatMessagesData = useGetChatMessagesQuery({
     variables: { chatId },
     skip: !chatId,
   });
@@ -78,7 +77,7 @@ const DirectChatContainer = ({ userId }) => {
     const subscribeToNewMessage = () => {
       try {
         return chatMessagesData.subscribeToMore({
-          document: NEW_MESSAGE_SUBSCRIPTION,
+          document: SubNewMessageDocument,
           variables: { chatId },
           updateQuery: (prev, { subscriptionData }) => {
             if (!subscriptionData.data) return prev;
@@ -100,7 +99,7 @@ const DirectChatContainer = ({ userId }) => {
     const subscribeToNewDirect = () => {
       try {
         return currentDirect.subscribeToMore({
-          document: NEW_DIRECT_SUBSCRIPTION,
+          document: SubNewDirectDocument,
           updateQuery: (prev, { subscriptionData }) => {
             if (!subscriptionData.data) return prev;
             const { newDirect } = subscriptionData.data;
@@ -123,7 +122,7 @@ const DirectChatContainer = ({ userId }) => {
     const subscribeToDeleteMessage = () => {
       try {
         return chatMessagesData.subscribeToMore({
-          document: DELETE_MESSAGE_SUBSCRIPTION,
+          document: SubDeleteMessageDocument,
           variables: { chatId },
           updateQuery: (prev, { subscriptionData }) => {
             if (!subscriptionData.data) return prev;
@@ -149,7 +148,7 @@ const DirectChatContainer = ({ userId }) => {
     const subscribeToDeleteDirect = () => {
       try {
         return currentDirect.subscribeToMore({
-          document: DELETE_DIRECT_SUBSCRIPTION,
+          document: SubDeleteDirectDocument,
           variables: { chatId },
           updateQuery: (prev, { subscriptionData }) => {
             if (!subscriptionData.data) return prev;
@@ -175,7 +174,7 @@ const DirectChatContainer = ({ userId }) => {
     const subscribeToUserTyping = () => {
       try {
         return currentDirect.subscribeToMore({
-          document: USER_TYPING_SUBSCRIPTION,
+          document: SubUserTypingDocument,
           variables: { chatId },
           updateQuery: (prev, { subscriptionData }) => {
             if (!subscriptionData.data) return prev;

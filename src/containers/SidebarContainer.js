@@ -1,36 +1,31 @@
 import React from "react";
-import {
-  DIRECTS,
-  DIRECT_LAST_MESSAGE,
-  CURRENT_USER,
-  USERS,
-} from "graphql/queries";
-import { DELETE_DIRECT, LOGOUT } from "graphql/mutations";
-import {
-  NEW_MESSAGE_SUBSCRIPTION,
-  NEW_DIRECT_SUBSCRIPTION,
-  DELETE_MESSAGE_SUBSCRIPTION,
-  DELETE_DIRECT_SUBSCRIPTION,
-  ONLINE_USER_SUBSCRIPTION,
-  USER_TYPING_SUBSCRIPTION,
-} from "graphql/subscriptions";
 import { pasreQuery } from "utils/index";
 import Sidebar from "components/Sidebar";
 import { get } from "lodash-es";
 import { sortByLastMessage, authTokens } from "utils/index";
-import { useQuery, useLazyQuery, useMutation } from "@apollo/react-hooks";
 import { wsLink } from "client";
+import {
+  SubNewDirectDocument,
+  SubDeleteDirectDocument,
+  SubNewMessageDocument,
+  SubDeleteMessageDocument,
+  SubOnlineUserDocument,
+  SubUserTypingDocument,
+  DirectsDocument,
+  DirectLastMessageDocument,
+  useUsersLazyQuery,
+  useDirectsQuery,
+  useDeleteDirectMutation,
+  useLogoutMutation,
+  useCurrentUserQuery,
+} from "graphql/generated.tsx";
 
 const SidebarContainer = (props) => {
-  const { data: user } = useQuery(CURRENT_USER);
-  const {
-    data: directs,
-    subscribeToMore: subscribeToMoreDirects,
-    client,
-  } = useQuery(DIRECTS);
-  const [searchUsers, { data: users }] = useLazyQuery(USERS);
-  const [deleteDirect] = useMutation(DELETE_DIRECT);
-  const [logout] = useMutation(LOGOUT, {
+  const { data: user } = useCurrentUserQuery();
+  const { data: directs, subscribeToMore, client } = useDirectsQuery();
+  const [searchUsers, { data: users }] = useUsersLazyQuery();
+  const [deleteDirect] = useDeleteDirectMutation();
+  const [logout] = useLogoutMutation({
     onCompleted: async () => {
       wsLink.subscriptionClient.client.onclose();
       client.resetStore();
@@ -49,8 +44,8 @@ const SidebarContainer = (props) => {
 
   const directSubscriptions = [
     (chatId) => {
-      return subscribeToMoreDirects({
-        document: USER_TYPING_SUBSCRIPTION,
+      return subscribeToMore({
+        document: SubUserTypingDocument,
         variables: { chatId },
         updateQuery: (prev, { subscriptionData }) => {
           if (!subscriptionData.data) return prev;
@@ -61,8 +56,8 @@ const SidebarContainer = (props) => {
       });
     },
     (chatId) => {
-      return subscribeToMoreDirects({
-        document: NEW_MESSAGE_SUBSCRIPTION,
+      return subscribeToMore({
+        document: SubNewMessageDocument,
         variables: { chatId },
         updateQuery: (prev, { subscriptionData }) => {
           if (!subscriptionData.data) return prev;
@@ -85,8 +80,8 @@ const SidebarContainer = (props) => {
       });
     },
     (chatId) => {
-      return subscribeToMoreDirects({
-        document: DELETE_MESSAGE_SUBSCRIPTION,
+      return subscribeToMore({
+        document: SubDeleteMessageDocument,
         variables: { chatId },
         updateQuery: async (prev, { subscriptionData }) => {
           if (!subscriptionData.data) return prev;
@@ -94,7 +89,7 @@ const SidebarContainer = (props) => {
 
           return await client
             .query({
-              query: DIRECT_LAST_MESSAGE,
+              query: DirectLastMessageDocument,
               variables: { chatId },
               fetchPolicy: "no-cache",
             })
@@ -113,7 +108,7 @@ const SidebarContainer = (props) => {
                 return direct;
               });
 
-              client.writeQuery({ query: DIRECTS, data: { directs } });
+              client.writeQuery({ query: DirectsDocument, data: { directs } });
 
               return { directs };
             });
@@ -124,8 +119,8 @@ const SidebarContainer = (props) => {
 
   const subscribtions = [
     () => {
-      return subscribeToMoreDirects({
-        document: DELETE_DIRECT_SUBSCRIPTION,
+      return subscribeToMore({
+        document: SubDeleteDirectDocument,
         updateQuery: async (prev, { subscriptionData }) => {
           if (!subscriptionData.data) return prev;
           const { deleteDirect } = subscriptionData.data;
@@ -134,15 +129,15 @@ const SidebarContainer = (props) => {
             ({ id }) => id !== deleteDirect.id
           );
 
-          client.writeQuery({ query: DIRECTS, data: { directs } });
+          client.writeQuery({ query: DirectsDocument, data: { directs } });
 
           return { directs };
         },
       });
     },
     () => {
-      return subscribeToMoreDirects({
-        document: NEW_DIRECT_SUBSCRIPTION,
+      return subscribeToMore({
+        document: SubNewDirectDocument,
         updateQuery: (prev, { subscriptionData }) => {
           if (!subscriptionData.data) return prev;
           const directs = prev.directs.concat(subscriptionData.data.newDirect);
@@ -150,11 +145,7 @@ const SidebarContainer = (props) => {
         },
       });
     },
-    () => {
-      return subscribeToMoreDirects({
-        document: ONLINE_USER_SUBSCRIPTION,
-      });
-    },
+    () => subscribeToMore({ document: SubOnlineUserDocument }),
   ];
 
   React.useEffect(() => {

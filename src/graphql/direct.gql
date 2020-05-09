@@ -1,0 +1,86 @@
+mutation createDirect($userId: Int!, $text: String) {
+  createDirect(userId: $userId, text: $text) {
+    id
+  }
+}
+
+mutation deleteDirect($id: Int!) {
+  deleteDirect(id: $id)
+}
+
+query directs {
+  directs {
+    id
+    user {
+      id
+      email
+      avatar
+      online
+      username
+      lastSeen
+      createdAt
+    }
+    lastMessage {
+      id
+      text
+      userId
+      createdAt
+    }
+    unread
+  }
+}
+
+query currentDirect($userId: Int!) {
+  currentDirect(userId: $userId) {
+    direct {
+      id
+    }
+    recipient {
+      id
+      email
+      avatar
+      online
+      username
+      lastSeen
+      createdAt
+    }
+  }
+}
+
+query directLastMessage($chatId: Int!) {
+  directLastMessage(chatId: $chatId) {
+    id
+    text
+    userId
+    createdAt
+  }
+}
+
+subscription subDeleteDirect {
+  deleteDirect {
+    id
+  }
+}
+
+subscription subNewDirect {
+  newDirect {
+    id
+    user {
+      id
+      email
+      avatar
+      online
+      username
+      lastSeen
+      createdAt
+    }
+    lastMessage {
+      id
+      text
+      userId
+      unread
+      createdAt
+    }
+    unread
+  }
+}
