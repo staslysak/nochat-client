@@ -2,6 +2,10 @@ import qs from "query-string";
 import moment from "moment";
 import decode from "jwt-decode";
 
+export const errorHandler = (error) => {
+  console.log(error);
+};
+
 export const stringifyQuery = (location, modifiers = {}) => {
   const settings = {
     arrayFormat: "comma",
@@ -21,18 +25,21 @@ export const stringifyQuery = (location, modifiers = {}) => {
 };
 
 export const authTokens = {
-  get() {
+  get(selector) {
+    if (selector) {
+      return localStorage.getItem(selector);
+    }
     return {
-      token: localStorage.getItem("token"),
+      accessToken: localStorage.getItem("accessToken"),
       refreshToken: localStorage.getItem("refreshToken"),
     };
   },
   set(tokens) {
-    localStorage.setItem("token", tokens.token);
+    localStorage.setItem("accessToken", tokens.accessToken);
     localStorage.setItem("refreshToken", tokens.refreshToken);
   },
   remove() {
-    localStorage.removeItem("token");
+    localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
   },
 };
@@ -47,10 +54,13 @@ export const pasreQuery = (location) => {
 };
 
 export const isAuthorized = () => {
-  const { token, refreshToken } = authTokens.get();
+  const { accessToken, refreshToken } = authTokens.get();
+  if (!accessToken || !refreshToken) {
+    return false;
+  }
 
   try {
-    decode(token);
+    decode(accessToken);
     const { exp } = decode(refreshToken);
     if (Date.now() / 1000 > exp) {
       return false;

@@ -33,48 +33,49 @@ export type CurrentDirect = {
 
 export type Subscription = {
    __typename?: 'Subscription';
-  newDirect?: Maybe<Direct>;
-  deleteDirect: Direct;
-  newMessage: Message;
-  deleteMessage: Message;
-  userTyping: Scalars['String'];
+  directCreated?: Maybe<Direct>;
+  directDeleted: Direct;
+  messageCreated: Message;
+  messageDeleted: MessageDeleted;
+  typingUser: Scalars['String'];
   onlineUser: User;
 };
 
 
-export type SubscriptionNewMessageArgs = {
-  chatId: Scalars['Int'];
+export type SubscriptionMessageCreatedArgs = {
+  chatIds?: Maybe<Array<Maybe<Scalars['Int']>>>;
 };
 
 
-export type SubscriptionDeleteMessageArgs = {
-  chatId: Scalars['Int'];
+export type SubscriptionMessageDeletedArgs = {
+  chatIds?: Maybe<Array<Maybe<Scalars['Int']>>>;
 };
 
 
-export type SubscriptionUserTypingArgs = {
+export type SubscriptionTypingUserArgs = {
   chatId: Scalars['Int'];
 };
 
 export type Query = {
    __typename?: 'Query';
   directs?: Maybe<Array<Direct>>;
+  direct: Direct;
   currentDirect?: Maybe<CurrentDirect>;
-  directLastMessage: Message;
   messages: Array<Message>;
   currentUser: User;
   users?: Maybe<Array<User>>;
   onlineUsers?: Maybe<Array<User>>;
+  refreshTokens?: Maybe<TokensResponse>;
+};
+
+
+export type QueryDirectArgs = {
+  id: Scalars['Int'];
 };
 
 
 export type QueryCurrentDirectArgs = {
   userId: Scalars['Int'];
-};
-
-
-export type QueryDirectLastMessageArgs = {
-  chatId: Scalars['Int'];
 };
 
 
@@ -88,6 +89,11 @@ export type QueryUsersArgs = {
   username?: Maybe<Scalars['String']>;
 };
 
+
+export type QueryRefreshTokensArgs = {
+  refreshToken: Scalars['String'];
+};
+
 export type Mutation = {
    __typename?: 'Mutation';
   createDirect: Direct;
@@ -95,7 +101,7 @@ export type Mutation = {
   readMessage: Scalars['Int'];
   deleteMessage: Scalars['Boolean'];
   createMessage: Scalars['Boolean'];
-  userTyping: Scalars['Boolean'];
+  typeMessage: Scalars['Boolean'];
   logout?: Maybe<Scalars['Boolean']>;
   verifyUser: LoginResponse;
   login: LoginResponse;
@@ -130,7 +136,7 @@ export type MutationCreateMessageArgs = {
 };
 
 
-export type MutationUserTypingArgs = {
+export type MutationTypeMessageArgs = {
   chatId: Scalars['Int'];
   username?: Maybe<Scalars['String']>;
 };
@@ -163,6 +169,12 @@ export type Message = {
   createdAt: Scalars['String'];
 };
 
+export type MessageDeleted = {
+   __typename?: 'MessageDeleted';
+  ids?: Maybe<Scalars['Int']>;
+  chat?: Maybe<Direct>;
+};
+
 export type User = {
    __typename?: 'User';
   id: Scalars['Int'];
@@ -178,7 +190,13 @@ export type User = {
 export type LoginResponse = {
    __typename?: 'LoginResponse';
   user?: Maybe<User>;
-  token?: Maybe<Scalars['String']>;
+  accessToken?: Maybe<Scalars['String']>;
+  refreshToken?: Maybe<Scalars['String']>;
+};
+
+export type TokensResponse = {
+   __typename?: 'TokensResponse';
+  accessToken?: Maybe<Scalars['String']>;
   refreshToken?: Maybe<Scalars['String']>;
 };
 
@@ -210,7 +228,7 @@ export type LoginMutation = (
   { __typename?: 'Mutation' }
   & { login: (
     { __typename?: 'LoginResponse' }
-    & Pick<LoginResponse, 'token' | 'refreshToken'>
+    & Pick<LoginResponse, 'accessToken' | 'refreshToken'>
   ) }
 );
 
@@ -221,9 +239,9 @@ export type VerifyUserMutationVariables = {
 
 export type VerifyUserMutation = (
   { __typename?: 'Mutation' }
-  & { verifyUser: (
+  & { tokens: (
     { __typename?: 'LoginResponse' }
-    & Pick<LoginResponse, 'token' | 'refreshToken'>
+    & Pick<LoginResponse, 'accessToken' | 'refreshToken'>
   ) }
 );
 
@@ -233,6 +251,19 @@ export type LogoutMutationVariables = {};
 export type LogoutMutation = (
   { __typename?: 'Mutation' }
   & Pick<Mutation, 'logout'>
+);
+
+export type RefreshTokensQueryVariables = {
+  refreshToken: Scalars['String'];
+};
+
+
+export type RefreshTokensQuery = (
+  { __typename?: 'Query' }
+  & { tokens?: Maybe<(
+    { __typename?: 'TokensResponse' }
+    & Pick<TokensResponse, 'accessToken' | 'refreshToken'>
+  )> }
 );
 
 export type CreateDirectMutationVariables = {
@@ -245,7 +276,14 @@ export type CreateDirectMutation = (
   { __typename?: 'Mutation' }
   & { createDirect: (
     { __typename?: 'Direct' }
-    & Pick<Direct, 'id'>
+    & Pick<Direct, 'id' | 'unread'>
+    & { user?: Maybe<(
+      { __typename?: 'User' }
+      & UserFragmentFragment
+    )>, lastMessage?: Maybe<(
+      { __typename?: 'Message' }
+      & MessageFragmentFragment
+    )> }
   ) }
 );
 
@@ -269,12 +307,32 @@ export type DirectsQuery = (
     & Pick<Direct, 'id' | 'unread'>
     & { user?: Maybe<(
       { __typename?: 'User' }
-      & Pick<User, 'id' | 'email' | 'avatar' | 'online' | 'username' | 'lastSeen' | 'createdAt'>
+      & UserFragmentFragment
     )>, lastMessage?: Maybe<(
       { __typename?: 'Message' }
-      & Pick<Message, 'id' | 'text' | 'userId' | 'createdAt'>
+      & MessageFragmentFragment
     )> }
   )>> }
+);
+
+export type DirectQueryVariables = {
+  id: Scalars['Int'];
+};
+
+
+export type DirectQuery = (
+  { __typename?: 'Query' }
+  & { direct: (
+    { __typename?: 'Direct' }
+    & Pick<Direct, 'id' | 'unread'>
+    & { user?: Maybe<(
+      { __typename?: 'User' }
+      & UserFragmentFragment
+    )>, lastMessage?: Maybe<(
+      { __typename?: 'Message' }
+      & MessageFragmentFragment
+    )> }
+  ) }
 );
 
 export type CurrentDirectQueryVariables = {
@@ -288,54 +346,58 @@ export type CurrentDirectQuery = (
     { __typename?: 'CurrentDirect' }
     & { direct?: Maybe<(
       { __typename?: 'Direct' }
-      & Pick<Direct, 'id'>
+      & Pick<Direct, 'id' | 'unread'>
+      & { user?: Maybe<(
+        { __typename?: 'User' }
+        & UserFragmentFragment
+      )>, lastMessage?: Maybe<(
+        { __typename?: 'Message' }
+        & MessageFragmentFragment
+      )> }
     )>, recipient?: Maybe<(
       { __typename?: 'User' }
-      & Pick<User, 'id' | 'email' | 'avatar' | 'online' | 'username' | 'lastSeen' | 'createdAt'>
+      & UserFragmentFragment
     )> }
   )> }
 );
 
-export type DirectLastMessageQueryVariables = {
-  chatId: Scalars['Int'];
-};
+export type DirectDeletedSubscriptionVariables = {};
 
 
-export type DirectLastMessageQuery = (
-  { __typename?: 'Query' }
-  & { directLastMessage: (
-    { __typename?: 'Message' }
-    & Pick<Message, 'id' | 'text' | 'userId' | 'createdAt'>
-  ) }
-);
-
-export type SubDeleteDirectSubscriptionVariables = {};
-
-
-export type SubDeleteDirectSubscription = (
+export type DirectDeletedSubscription = (
   { __typename?: 'Subscription' }
-  & { deleteDirect: (
+  & { direct: (
     { __typename?: 'Direct' }
     & Pick<Direct, 'id'>
   ) }
 );
 
-export type SubNewDirectSubscriptionVariables = {};
+export type DirectCreatedSubscriptionVariables = {};
 
 
-export type SubNewDirectSubscription = (
+export type DirectCreatedSubscription = (
   { __typename?: 'Subscription' }
-  & { newDirect?: Maybe<(
+  & { direct?: Maybe<(
     { __typename?: 'Direct' }
     & Pick<Direct, 'id' | 'unread'>
     & { user?: Maybe<(
       { __typename?: 'User' }
-      & Pick<User, 'id' | 'email' | 'avatar' | 'online' | 'username' | 'lastSeen' | 'createdAt'>
+      & UserFragmentFragment
     )>, lastMessage?: Maybe<(
       { __typename?: 'Message' }
-      & Pick<Message, 'id' | 'text' | 'userId' | 'unread' | 'createdAt'>
+      & MessageFragmentFragment
     )> }
   )> }
+);
+
+export type MessageFragmentFragment = (
+  { __typename?: 'Message' }
+  & Pick<Message, 'id' | 'text' | 'userId' | 'chatId' | 'unread' | 'createdAt'>
+);
+
+export type UserFragmentFragment = (
+  { __typename?: 'User' }
+  & Pick<User, 'id' | 'email' | 'avatar' | 'online' | 'username' | 'lastSeen' | 'createdAt'>
 );
 
 export type CreateMessageMutationVariables = {
@@ -369,55 +431,66 @@ export type ReadMessageMutation = (
   & Pick<Mutation, 'readMessage'>
 );
 
-export type GetChatMessagesQueryVariables = {
+export type GetMessagesQueryVariables = {
   chatId: Scalars['Int'];
   offset?: Maybe<Scalars['Int']>;
 };
 
 
-export type GetChatMessagesQuery = (
+export type GetMessagesQuery = (
   { __typename?: 'Query' }
   & { messages: Array<(
     { __typename?: 'Message' }
-    & Pick<Message, 'id' | 'text' | 'userId' | 'unread' | 'createdAt'>
+    & MessageFragmentFragment
   )> }
 );
 
-export type SubNewMessageSubscriptionVariables = {
-  chatId: Scalars['Int'];
+export type MessageCreatedSubscriptionVariables = {
+  chatIds?: Maybe<Array<Maybe<Scalars['Int']>>>;
 };
 
 
-export type SubNewMessageSubscription = (
+export type MessageCreatedSubscription = (
   { __typename?: 'Subscription' }
-  & { newMessage: (
+  & { messageCreated: (
     { __typename?: 'Message' }
-    & Pick<Message, 'id' | 'text' | 'userId' | 'chatId' | 'unread' | 'createdAt'>
+    & MessageFragmentFragment
   ) }
 );
 
-export type SubDeleteMessageSubscriptionVariables = {
-  chatId: Scalars['Int'];
+export type MessageDeletedSubscriptionVariables = {
+  chatIds?: Maybe<Array<Maybe<Scalars['Int']>>>;
 };
 
 
-export type SubDeleteMessageSubscription = (
+export type MessageDeletedSubscription = (
   { __typename?: 'Subscription' }
-  & { deleteMessage: (
-    { __typename?: 'Message' }
-    & Pick<Message, 'id' | 'userId'>
+  & { messageDeleted: (
+    { __typename?: 'MessageDeleted' }
+    & Pick<MessageDeleted, 'ids'>
+    & { chat?: Maybe<(
+      { __typename?: 'Direct' }
+      & Pick<Direct, 'id' | 'unread'>
+      & { lastMessage?: Maybe<(
+        { __typename?: 'Message' }
+        & MessageFragmentFragment
+      )>, user?: Maybe<(
+        { __typename?: 'User' }
+        & UserFragmentFragment
+      )> }
+    )> }
   ) }
 );
 
-export type UserTypingMutationVariables = {
+export type TypeMessageMutationVariables = {
   chatId: Scalars['Int'];
   username?: Maybe<Scalars['String']>;
 };
 
 
-export type UserTypingMutation = (
+export type TypeMessageMutation = (
   { __typename?: 'Mutation' }
-  & Pick<Mutation, 'userTyping'>
+  & Pick<Mutation, 'typeMessage'>
 );
 
 export type UsersQueryVariables = {
@@ -429,7 +502,7 @@ export type UsersQuery = (
   { __typename?: 'Query' }
   & { users?: Maybe<Array<(
     { __typename?: 'User' }
-    & Pick<User, 'id' | 'email' | 'avatar' | 'online' | 'username' | 'lastSeen' | 'createdAt'>
+    & UserFragmentFragment
   )>> }
 );
 
@@ -440,14 +513,14 @@ export type CurrentUserQuery = (
   { __typename?: 'Query' }
   & { currentUser: (
     { __typename?: 'User' }
-    & Pick<User, 'id' | 'email' | 'avatar' | 'online' | 'username' | 'createdAt'>
+    & UserFragmentFragment
   ) }
 );
 
-export type SubOnlineUserSubscriptionVariables = {};
+export type OnlineUserSubscriptionVariables = {};
 
 
-export type SubOnlineUserSubscription = (
+export type OnlineUserSubscription = (
   { __typename?: 'Subscription' }
   & { onlineUser: (
     { __typename?: 'User' }
@@ -455,17 +528,37 @@ export type SubOnlineUserSubscription = (
   ) }
 );
 
-export type SubUserTypingSubscriptionVariables = {
+export type TypingUserSubscriptionVariables = {
   chatId: Scalars['Int'];
 };
 
 
-export type SubUserTypingSubscription = (
+export type TypingUserSubscription = (
   { __typename?: 'Subscription' }
-  & Pick<Subscription, 'userTyping'>
+  & Pick<Subscription, 'typingUser'>
 );
 
-
+export const MessageFragmentFragmentDoc = gql`
+    fragment messageFragment on Message {
+  id
+  text
+  userId
+  chatId
+  unread
+  createdAt
+}
+    `;
+export const UserFragmentFragmentDoc = gql`
+    fragment userFragment on User {
+  id
+  email
+  avatar
+  online
+  username
+  lastSeen
+  createdAt
+}
+    `;
 export const RegisterDocument = gql`
     mutation register($username: String!, $email: String!, $password: String!) {
   register(username: $username, email: $email, password: $password)
@@ -507,7 +600,7 @@ export type RegisterMutationOptions = ApolloReactCommon.BaseMutationOptions<Regi
 export const LoginDocument = gql`
     mutation login($username: String!, $password: String!) {
   login(username: $username, password: $password) {
-    token
+    accessToken
     refreshToken
   }
 }
@@ -546,8 +639,8 @@ export type LoginMutationResult = ApolloReactCommon.MutationResult<LoginMutation
 export type LoginMutationOptions = ApolloReactCommon.BaseMutationOptions<LoginMutation, LoginMutationVariables>;
 export const VerifyUserDocument = gql`
     mutation verifyUser($secret: String!) {
-  verifyUser(secret: $secret) {
-    token
+  tokens: verifyUser(secret: $secret) {
+    accessToken
     refreshToken
   }
 }
@@ -618,13 +711,61 @@ export function useLogoutMutation(baseOptions?: ApolloReactHooks.MutationHookOpt
 export type LogoutMutationHookResult = ReturnType<typeof useLogoutMutation>;
 export type LogoutMutationResult = ApolloReactCommon.MutationResult<LogoutMutation>;
 export type LogoutMutationOptions = ApolloReactCommon.BaseMutationOptions<LogoutMutation, LogoutMutationVariables>;
+export const RefreshTokensDocument = gql`
+    query refreshTokens($refreshToken: String!) {
+  tokens: refreshTokens(refreshToken: $refreshToken) {
+    accessToken
+    refreshToken
+  }
+}
+    `;
+export type RefreshTokensComponentProps = Omit<ApolloReactComponents.QueryComponentOptions<RefreshTokensQuery, RefreshTokensQueryVariables>, 'query'> & ({ variables: RefreshTokensQueryVariables; skip?: boolean; } | { skip: boolean; });
+
+    export const RefreshTokensComponent = (props: RefreshTokensComponentProps) => (
+      <ApolloReactComponents.Query<RefreshTokensQuery, RefreshTokensQueryVariables> query={RefreshTokensDocument} {...props} />
+    );
+    
+
+/**
+ * __useRefreshTokensQuery__
+ *
+ * To run a query within a React component, call `useRefreshTokensQuery` and pass it any options that fit your needs.
+ * When your component renders, `useRefreshTokensQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useRefreshTokensQuery({
+ *   variables: {
+ *      refreshToken: // value for 'refreshToken'
+ *   },
+ * });
+ */
+export function useRefreshTokensQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<RefreshTokensQuery, RefreshTokensQueryVariables>) {
+        return ApolloReactHooks.useQuery<RefreshTokensQuery, RefreshTokensQueryVariables>(RefreshTokensDocument, baseOptions);
+      }
+export function useRefreshTokensLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<RefreshTokensQuery, RefreshTokensQueryVariables>) {
+          return ApolloReactHooks.useLazyQuery<RefreshTokensQuery, RefreshTokensQueryVariables>(RefreshTokensDocument, baseOptions);
+        }
+export type RefreshTokensQueryHookResult = ReturnType<typeof useRefreshTokensQuery>;
+export type RefreshTokensLazyQueryHookResult = ReturnType<typeof useRefreshTokensLazyQuery>;
+export type RefreshTokensQueryResult = ApolloReactCommon.QueryResult<RefreshTokensQuery, RefreshTokensQueryVariables>;
 export const CreateDirectDocument = gql`
     mutation createDirect($userId: Int!, $text: String) {
   createDirect(userId: $userId, text: $text) {
     id
+    user {
+      ...userFragment
+    }
+    lastMessage {
+      ...messageFragment
+    }
+    unread
   }
 }
-    `;
+    ${UserFragmentFragmentDoc}
+${MessageFragmentFragmentDoc}`;
 export type CreateDirectMutationFn = ApolloReactCommon.MutationFunction<CreateDirectMutation, CreateDirectMutationVariables>;
 export type CreateDirectComponentProps = Omit<ApolloReactComponents.MutationComponentOptions<CreateDirectMutation, CreateDirectMutationVariables>, 'mutation'>;
 
@@ -698,24 +839,16 @@ export const DirectsDocument = gql`
   directs {
     id
     user {
-      id
-      email
-      avatar
-      online
-      username
-      lastSeen
-      createdAt
+      ...userFragment
     }
     lastMessage {
-      id
-      text
-      userId
-      createdAt
+      ...messageFragment
     }
     unread
   }
 }
-    `;
+    ${UserFragmentFragmentDoc}
+${MessageFragmentFragmentDoc}`;
 export type DirectsComponentProps = Omit<ApolloReactComponents.QueryComponentOptions<DirectsQuery, DirectsQueryVariables>, 'query'>;
 
     export const DirectsComponent = (props: DirectsComponentProps) => (
@@ -747,24 +880,73 @@ export function useDirectsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHook
 export type DirectsQueryHookResult = ReturnType<typeof useDirectsQuery>;
 export type DirectsLazyQueryHookResult = ReturnType<typeof useDirectsLazyQuery>;
 export type DirectsQueryResult = ApolloReactCommon.QueryResult<DirectsQuery, DirectsQueryVariables>;
+export const DirectDocument = gql`
+    query direct($id: Int!) {
+  direct(id: $id) {
+    id
+    user {
+      ...userFragment
+    }
+    lastMessage {
+      ...messageFragment
+    }
+    unread
+  }
+}
+    ${UserFragmentFragmentDoc}
+${MessageFragmentFragmentDoc}`;
+export type DirectComponentProps = Omit<ApolloReactComponents.QueryComponentOptions<DirectQuery, DirectQueryVariables>, 'query'> & ({ variables: DirectQueryVariables; skip?: boolean; } | { skip: boolean; });
+
+    export const DirectComponent = (props: DirectComponentProps) => (
+      <ApolloReactComponents.Query<DirectQuery, DirectQueryVariables> query={DirectDocument} {...props} />
+    );
+    
+
+/**
+ * __useDirectQuery__
+ *
+ * To run a query within a React component, call `useDirectQuery` and pass it any options that fit your needs.
+ * When your component renders, `useDirectQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useDirectQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useDirectQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<DirectQuery, DirectQueryVariables>) {
+        return ApolloReactHooks.useQuery<DirectQuery, DirectQueryVariables>(DirectDocument, baseOptions);
+      }
+export function useDirectLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<DirectQuery, DirectQueryVariables>) {
+          return ApolloReactHooks.useLazyQuery<DirectQuery, DirectQueryVariables>(DirectDocument, baseOptions);
+        }
+export type DirectQueryHookResult = ReturnType<typeof useDirectQuery>;
+export type DirectLazyQueryHookResult = ReturnType<typeof useDirectLazyQuery>;
+export type DirectQueryResult = ApolloReactCommon.QueryResult<DirectQuery, DirectQueryVariables>;
 export const CurrentDirectDocument = gql`
     query currentDirect($userId: Int!) {
   currentDirect(userId: $userId) {
     direct {
       id
+      user {
+        ...userFragment
+      }
+      lastMessage {
+        ...messageFragment
+      }
+      unread
     }
     recipient {
-      id
-      email
-      avatar
-      online
-      username
-      lastSeen
-      createdAt
+      ...userFragment
     }
   }
 }
-    `;
+    ${UserFragmentFragmentDoc}
+${MessageFragmentFragmentDoc}`;
 export type CurrentDirectComponentProps = Omit<ApolloReactComponents.QueryComponentOptions<CurrentDirectQuery, CurrentDirectQueryVariables>, 'query'> & ({ variables: CurrentDirectQueryVariables; skip?: boolean; } | { skip: boolean; });
 
     export const CurrentDirectComponent = (props: CurrentDirectComponentProps) => (
@@ -797,133 +979,82 @@ export function useCurrentDirectLazyQuery(baseOptions?: ApolloReactHooks.LazyQue
 export type CurrentDirectQueryHookResult = ReturnType<typeof useCurrentDirectQuery>;
 export type CurrentDirectLazyQueryHookResult = ReturnType<typeof useCurrentDirectLazyQuery>;
 export type CurrentDirectQueryResult = ApolloReactCommon.QueryResult<CurrentDirectQuery, CurrentDirectQueryVariables>;
-export const DirectLastMessageDocument = gql`
-    query directLastMessage($chatId: Int!) {
-  directLastMessage(chatId: $chatId) {
-    id
-    text
-    userId
-    createdAt
-  }
-}
-    `;
-export type DirectLastMessageComponentProps = Omit<ApolloReactComponents.QueryComponentOptions<DirectLastMessageQuery, DirectLastMessageQueryVariables>, 'query'> & ({ variables: DirectLastMessageQueryVariables; skip?: boolean; } | { skip: boolean; });
-
-    export const DirectLastMessageComponent = (props: DirectLastMessageComponentProps) => (
-      <ApolloReactComponents.Query<DirectLastMessageQuery, DirectLastMessageQueryVariables> query={DirectLastMessageDocument} {...props} />
-    );
-    
-
-/**
- * __useDirectLastMessageQuery__
- *
- * To run a query within a React component, call `useDirectLastMessageQuery` and pass it any options that fit your needs.
- * When your component renders, `useDirectLastMessageQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useDirectLastMessageQuery({
- *   variables: {
- *      chatId: // value for 'chatId'
- *   },
- * });
- */
-export function useDirectLastMessageQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<DirectLastMessageQuery, DirectLastMessageQueryVariables>) {
-        return ApolloReactHooks.useQuery<DirectLastMessageQuery, DirectLastMessageQueryVariables>(DirectLastMessageDocument, baseOptions);
-      }
-export function useDirectLastMessageLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<DirectLastMessageQuery, DirectLastMessageQueryVariables>) {
-          return ApolloReactHooks.useLazyQuery<DirectLastMessageQuery, DirectLastMessageQueryVariables>(DirectLastMessageDocument, baseOptions);
-        }
-export type DirectLastMessageQueryHookResult = ReturnType<typeof useDirectLastMessageQuery>;
-export type DirectLastMessageLazyQueryHookResult = ReturnType<typeof useDirectLastMessageLazyQuery>;
-export type DirectLastMessageQueryResult = ApolloReactCommon.QueryResult<DirectLastMessageQuery, DirectLastMessageQueryVariables>;
-export const SubDeleteDirectDocument = gql`
-    subscription subDeleteDirect {
-  deleteDirect {
+export const DirectDeletedDocument = gql`
+    subscription directDeleted {
+  direct: directDeleted {
     id
   }
 }
     `;
-export type SubDeleteDirectComponentProps = Omit<ApolloReactComponents.SubscriptionComponentOptions<SubDeleteDirectSubscription, SubDeleteDirectSubscriptionVariables>, 'subscription'>;
+export type DirectDeletedComponentProps = Omit<ApolloReactComponents.SubscriptionComponentOptions<DirectDeletedSubscription, DirectDeletedSubscriptionVariables>, 'subscription'>;
 
-    export const SubDeleteDirectComponent = (props: SubDeleteDirectComponentProps) => (
-      <ApolloReactComponents.Subscription<SubDeleteDirectSubscription, SubDeleteDirectSubscriptionVariables> subscription={SubDeleteDirectDocument} {...props} />
+    export const DirectDeletedComponent = (props: DirectDeletedComponentProps) => (
+      <ApolloReactComponents.Subscription<DirectDeletedSubscription, DirectDeletedSubscriptionVariables> subscription={DirectDeletedDocument} {...props} />
     );
     
 
 /**
- * __useSubDeleteDirectSubscription__
+ * __useDirectDeletedSubscription__
  *
- * To run a query within a React component, call `useSubDeleteDirectSubscription` and pass it any options that fit your needs.
- * When your component renders, `useSubDeleteDirectSubscription` returns an object from Apollo Client that contains loading, error, and data properties
+ * To run a query within a React component, call `useDirectDeletedSubscription` and pass it any options that fit your needs.
+ * When your component renders, `useDirectDeletedSubscription` returns an object from Apollo Client that contains loading, error, and data properties
  * you can use to render your UI.
  *
  * @param baseOptions options that will be passed into the subscription, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const { data, loading, error } = useSubDeleteDirectSubscription({
+ * const { data, loading, error } = useDirectDeletedSubscription({
  *   variables: {
  *   },
  * });
  */
-export function useSubDeleteDirectSubscription(baseOptions?: ApolloReactHooks.SubscriptionHookOptions<SubDeleteDirectSubscription, SubDeleteDirectSubscriptionVariables>) {
-        return ApolloReactHooks.useSubscription<SubDeleteDirectSubscription, SubDeleteDirectSubscriptionVariables>(SubDeleteDirectDocument, baseOptions);
+export function useDirectDeletedSubscription(baseOptions?: ApolloReactHooks.SubscriptionHookOptions<DirectDeletedSubscription, DirectDeletedSubscriptionVariables>) {
+        return ApolloReactHooks.useSubscription<DirectDeletedSubscription, DirectDeletedSubscriptionVariables>(DirectDeletedDocument, baseOptions);
       }
-export type SubDeleteDirectSubscriptionHookResult = ReturnType<typeof useSubDeleteDirectSubscription>;
-export type SubDeleteDirectSubscriptionResult = ApolloReactCommon.SubscriptionResult<SubDeleteDirectSubscription>;
-export const SubNewDirectDocument = gql`
-    subscription subNewDirect {
-  newDirect {
+export type DirectDeletedSubscriptionHookResult = ReturnType<typeof useDirectDeletedSubscription>;
+export type DirectDeletedSubscriptionResult = ApolloReactCommon.SubscriptionResult<DirectDeletedSubscription>;
+export const DirectCreatedDocument = gql`
+    subscription directCreated {
+  direct: directCreated {
     id
     user {
-      id
-      email
-      avatar
-      online
-      username
-      lastSeen
-      createdAt
+      ...userFragment
     }
     lastMessage {
-      id
-      text
-      userId
-      unread
-      createdAt
+      ...messageFragment
     }
     unread
   }
 }
-    `;
-export type SubNewDirectComponentProps = Omit<ApolloReactComponents.SubscriptionComponentOptions<SubNewDirectSubscription, SubNewDirectSubscriptionVariables>, 'subscription'>;
+    ${UserFragmentFragmentDoc}
+${MessageFragmentFragmentDoc}`;
+export type DirectCreatedComponentProps = Omit<ApolloReactComponents.SubscriptionComponentOptions<DirectCreatedSubscription, DirectCreatedSubscriptionVariables>, 'subscription'>;
 
-    export const SubNewDirectComponent = (props: SubNewDirectComponentProps) => (
-      <ApolloReactComponents.Subscription<SubNewDirectSubscription, SubNewDirectSubscriptionVariables> subscription={SubNewDirectDocument} {...props} />
+    export const DirectCreatedComponent = (props: DirectCreatedComponentProps) => (
+      <ApolloReactComponents.Subscription<DirectCreatedSubscription, DirectCreatedSubscriptionVariables> subscription={DirectCreatedDocument} {...props} />
     );
     
 
 /**
- * __useSubNewDirectSubscription__
+ * __useDirectCreatedSubscription__
  *
- * To run a query within a React component, call `useSubNewDirectSubscription` and pass it any options that fit your needs.
- * When your component renders, `useSubNewDirectSubscription` returns an object from Apollo Client that contains loading, error, and data properties
+ * To run a query within a React component, call `useDirectCreatedSubscription` and pass it any options that fit your needs.
+ * When your component renders, `useDirectCreatedSubscription` returns an object from Apollo Client that contains loading, error, and data properties
  * you can use to render your UI.
  *
  * @param baseOptions options that will be passed into the subscription, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const { data, loading, error } = useSubNewDirectSubscription({
+ * const { data, loading, error } = useDirectCreatedSubscription({
  *   variables: {
  *   },
  * });
  */
-export function useSubNewDirectSubscription(baseOptions?: ApolloReactHooks.SubscriptionHookOptions<SubNewDirectSubscription, SubNewDirectSubscriptionVariables>) {
-        return ApolloReactHooks.useSubscription<SubNewDirectSubscription, SubNewDirectSubscriptionVariables>(SubNewDirectDocument, baseOptions);
+export function useDirectCreatedSubscription(baseOptions?: ApolloReactHooks.SubscriptionHookOptions<DirectCreatedSubscription, DirectCreatedSubscriptionVariables>) {
+        return ApolloReactHooks.useSubscription<DirectCreatedSubscription, DirectCreatedSubscriptionVariables>(DirectCreatedDocument, baseOptions);
       }
-export type SubNewDirectSubscriptionHookResult = ReturnType<typeof useSubNewDirectSubscription>;
-export type SubNewDirectSubscriptionResult = ApolloReactCommon.SubscriptionResult<SubNewDirectSubscription>;
+export type DirectCreatedSubscriptionHookResult = ReturnType<typeof useDirectCreatedSubscription>;
+export type DirectCreatedSubscriptionResult = ApolloReactCommon.SubscriptionResult<DirectCreatedSubscription>;
 export const CreateMessageDocument = gql`
     mutation createMessage($chatId: Int, $text: String!) {
   createMessage(chatId: $chatId, text: $text)
@@ -1033,176 +1164,171 @@ export function useReadMessageMutation(baseOptions?: ApolloReactHooks.MutationHo
 export type ReadMessageMutationHookResult = ReturnType<typeof useReadMessageMutation>;
 export type ReadMessageMutationResult = ApolloReactCommon.MutationResult<ReadMessageMutation>;
 export type ReadMessageMutationOptions = ApolloReactCommon.BaseMutationOptions<ReadMessageMutation, ReadMessageMutationVariables>;
-export const GetChatMessagesDocument = gql`
-    query getChatMessages($chatId: Int!, $offset: Int) {
+export const GetMessagesDocument = gql`
+    query getMessages($chatId: Int!, $offset: Int) {
   messages(chatId: $chatId, offset: $offset) {
-    id
-    text
-    userId
-    unread
-    createdAt
+    ...messageFragment
   }
 }
-    `;
-export type GetChatMessagesComponentProps = Omit<ApolloReactComponents.QueryComponentOptions<GetChatMessagesQuery, GetChatMessagesQueryVariables>, 'query'> & ({ variables: GetChatMessagesQueryVariables; skip?: boolean; } | { skip: boolean; });
+    ${MessageFragmentFragmentDoc}`;
+export type GetMessagesComponentProps = Omit<ApolloReactComponents.QueryComponentOptions<GetMessagesQuery, GetMessagesQueryVariables>, 'query'> & ({ variables: GetMessagesQueryVariables; skip?: boolean; } | { skip: boolean; });
 
-    export const GetChatMessagesComponent = (props: GetChatMessagesComponentProps) => (
-      <ApolloReactComponents.Query<GetChatMessagesQuery, GetChatMessagesQueryVariables> query={GetChatMessagesDocument} {...props} />
+    export const GetMessagesComponent = (props: GetMessagesComponentProps) => (
+      <ApolloReactComponents.Query<GetMessagesQuery, GetMessagesQueryVariables> query={GetMessagesDocument} {...props} />
     );
     
 
 /**
- * __useGetChatMessagesQuery__
+ * __useGetMessagesQuery__
  *
- * To run a query within a React component, call `useGetChatMessagesQuery` and pass it any options that fit your needs.
- * When your component renders, `useGetChatMessagesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * To run a query within a React component, call `useGetMessagesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetMessagesQuery` returns an object from Apollo Client that contains loading, error, and data properties
  * you can use to render your UI.
  *
  * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const { data, loading, error } = useGetChatMessagesQuery({
+ * const { data, loading, error } = useGetMessagesQuery({
  *   variables: {
  *      chatId: // value for 'chatId'
  *      offset: // value for 'offset'
  *   },
  * });
  */
-export function useGetChatMessagesQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<GetChatMessagesQuery, GetChatMessagesQueryVariables>) {
-        return ApolloReactHooks.useQuery<GetChatMessagesQuery, GetChatMessagesQueryVariables>(GetChatMessagesDocument, baseOptions);
+export function useGetMessagesQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<GetMessagesQuery, GetMessagesQueryVariables>) {
+        return ApolloReactHooks.useQuery<GetMessagesQuery, GetMessagesQueryVariables>(GetMessagesDocument, baseOptions);
       }
-export function useGetChatMessagesLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GetChatMessagesQuery, GetChatMessagesQueryVariables>) {
-          return ApolloReactHooks.useLazyQuery<GetChatMessagesQuery, GetChatMessagesQueryVariables>(GetChatMessagesDocument, baseOptions);
+export function useGetMessagesLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GetMessagesQuery, GetMessagesQueryVariables>) {
+          return ApolloReactHooks.useLazyQuery<GetMessagesQuery, GetMessagesQueryVariables>(GetMessagesDocument, baseOptions);
         }
-export type GetChatMessagesQueryHookResult = ReturnType<typeof useGetChatMessagesQuery>;
-export type GetChatMessagesLazyQueryHookResult = ReturnType<typeof useGetChatMessagesLazyQuery>;
-export type GetChatMessagesQueryResult = ApolloReactCommon.QueryResult<GetChatMessagesQuery, GetChatMessagesQueryVariables>;
-export const SubNewMessageDocument = gql`
-    subscription subNewMessage($chatId: Int!) {
-  newMessage(chatId: $chatId) {
-    id
-    text
-    userId
-    chatId
-    unread
-    createdAt
+export type GetMessagesQueryHookResult = ReturnType<typeof useGetMessagesQuery>;
+export type GetMessagesLazyQueryHookResult = ReturnType<typeof useGetMessagesLazyQuery>;
+export type GetMessagesQueryResult = ApolloReactCommon.QueryResult<GetMessagesQuery, GetMessagesQueryVariables>;
+export const MessageCreatedDocument = gql`
+    subscription messageCreated($chatIds: [Int]) {
+  messageCreated(chatIds: $chatIds) {
+    ...messageFragment
   }
 }
-    `;
-export type SubNewMessageComponentProps = Omit<ApolloReactComponents.SubscriptionComponentOptions<SubNewMessageSubscription, SubNewMessageSubscriptionVariables>, 'subscription'>;
+    ${MessageFragmentFragmentDoc}`;
+export type MessageCreatedComponentProps = Omit<ApolloReactComponents.SubscriptionComponentOptions<MessageCreatedSubscription, MessageCreatedSubscriptionVariables>, 'subscription'>;
 
-    export const SubNewMessageComponent = (props: SubNewMessageComponentProps) => (
-      <ApolloReactComponents.Subscription<SubNewMessageSubscription, SubNewMessageSubscriptionVariables> subscription={SubNewMessageDocument} {...props} />
+    export const MessageCreatedComponent = (props: MessageCreatedComponentProps) => (
+      <ApolloReactComponents.Subscription<MessageCreatedSubscription, MessageCreatedSubscriptionVariables> subscription={MessageCreatedDocument} {...props} />
     );
     
 
 /**
- * __useSubNewMessageSubscription__
+ * __useMessageCreatedSubscription__
  *
- * To run a query within a React component, call `useSubNewMessageSubscription` and pass it any options that fit your needs.
- * When your component renders, `useSubNewMessageSubscription` returns an object from Apollo Client that contains loading, error, and data properties
+ * To run a query within a React component, call `useMessageCreatedSubscription` and pass it any options that fit your needs.
+ * When your component renders, `useMessageCreatedSubscription` returns an object from Apollo Client that contains loading, error, and data properties
  * you can use to render your UI.
  *
  * @param baseOptions options that will be passed into the subscription, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const { data, loading, error } = useSubNewMessageSubscription({
+ * const { data, loading, error } = useMessageCreatedSubscription({
  *   variables: {
- *      chatId: // value for 'chatId'
+ *      chatIds: // value for 'chatIds'
  *   },
  * });
  */
-export function useSubNewMessageSubscription(baseOptions?: ApolloReactHooks.SubscriptionHookOptions<SubNewMessageSubscription, SubNewMessageSubscriptionVariables>) {
-        return ApolloReactHooks.useSubscription<SubNewMessageSubscription, SubNewMessageSubscriptionVariables>(SubNewMessageDocument, baseOptions);
+export function useMessageCreatedSubscription(baseOptions?: ApolloReactHooks.SubscriptionHookOptions<MessageCreatedSubscription, MessageCreatedSubscriptionVariables>) {
+        return ApolloReactHooks.useSubscription<MessageCreatedSubscription, MessageCreatedSubscriptionVariables>(MessageCreatedDocument, baseOptions);
       }
-export type SubNewMessageSubscriptionHookResult = ReturnType<typeof useSubNewMessageSubscription>;
-export type SubNewMessageSubscriptionResult = ApolloReactCommon.SubscriptionResult<SubNewMessageSubscription>;
-export const SubDeleteMessageDocument = gql`
-    subscription subDeleteMessage($chatId: Int!) {
-  deleteMessage(chatId: $chatId) {
-    id
-    userId
+export type MessageCreatedSubscriptionHookResult = ReturnType<typeof useMessageCreatedSubscription>;
+export type MessageCreatedSubscriptionResult = ApolloReactCommon.SubscriptionResult<MessageCreatedSubscription>;
+export const MessageDeletedDocument = gql`
+    subscription messageDeleted($chatIds: [Int]) {
+  messageDeleted(chatIds: $chatIds) {
+    ids
+    chat {
+      id
+      lastMessage {
+        ...messageFragment
+      }
+      user {
+        ...userFragment
+      }
+      unread
+    }
   }
 }
-    `;
-export type SubDeleteMessageComponentProps = Omit<ApolloReactComponents.SubscriptionComponentOptions<SubDeleteMessageSubscription, SubDeleteMessageSubscriptionVariables>, 'subscription'>;
+    ${MessageFragmentFragmentDoc}
+${UserFragmentFragmentDoc}`;
+export type MessageDeletedComponentProps = Omit<ApolloReactComponents.SubscriptionComponentOptions<MessageDeletedSubscription, MessageDeletedSubscriptionVariables>, 'subscription'>;
 
-    export const SubDeleteMessageComponent = (props: SubDeleteMessageComponentProps) => (
-      <ApolloReactComponents.Subscription<SubDeleteMessageSubscription, SubDeleteMessageSubscriptionVariables> subscription={SubDeleteMessageDocument} {...props} />
+    export const MessageDeletedComponent = (props: MessageDeletedComponentProps) => (
+      <ApolloReactComponents.Subscription<MessageDeletedSubscription, MessageDeletedSubscriptionVariables> subscription={MessageDeletedDocument} {...props} />
     );
     
 
 /**
- * __useSubDeleteMessageSubscription__
+ * __useMessageDeletedSubscription__
  *
- * To run a query within a React component, call `useSubDeleteMessageSubscription` and pass it any options that fit your needs.
- * When your component renders, `useSubDeleteMessageSubscription` returns an object from Apollo Client that contains loading, error, and data properties
+ * To run a query within a React component, call `useMessageDeletedSubscription` and pass it any options that fit your needs.
+ * When your component renders, `useMessageDeletedSubscription` returns an object from Apollo Client that contains loading, error, and data properties
  * you can use to render your UI.
  *
  * @param baseOptions options that will be passed into the subscription, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const { data, loading, error } = useSubDeleteMessageSubscription({
+ * const { data, loading, error } = useMessageDeletedSubscription({
  *   variables: {
- *      chatId: // value for 'chatId'
+ *      chatIds: // value for 'chatIds'
  *   },
  * });
  */
-export function useSubDeleteMessageSubscription(baseOptions?: ApolloReactHooks.SubscriptionHookOptions<SubDeleteMessageSubscription, SubDeleteMessageSubscriptionVariables>) {
-        return ApolloReactHooks.useSubscription<SubDeleteMessageSubscription, SubDeleteMessageSubscriptionVariables>(SubDeleteMessageDocument, baseOptions);
+export function useMessageDeletedSubscription(baseOptions?: ApolloReactHooks.SubscriptionHookOptions<MessageDeletedSubscription, MessageDeletedSubscriptionVariables>) {
+        return ApolloReactHooks.useSubscription<MessageDeletedSubscription, MessageDeletedSubscriptionVariables>(MessageDeletedDocument, baseOptions);
       }
-export type SubDeleteMessageSubscriptionHookResult = ReturnType<typeof useSubDeleteMessageSubscription>;
-export type SubDeleteMessageSubscriptionResult = ApolloReactCommon.SubscriptionResult<SubDeleteMessageSubscription>;
-export const UserTypingDocument = gql`
-    mutation userTyping($chatId: Int!, $username: String) {
-  userTyping(chatId: $chatId, username: $username)
+export type MessageDeletedSubscriptionHookResult = ReturnType<typeof useMessageDeletedSubscription>;
+export type MessageDeletedSubscriptionResult = ApolloReactCommon.SubscriptionResult<MessageDeletedSubscription>;
+export const TypeMessageDocument = gql`
+    mutation typeMessage($chatId: Int!, $username: String) {
+  typeMessage(chatId: $chatId, username: $username)
 }
     `;
-export type UserTypingMutationFn = ApolloReactCommon.MutationFunction<UserTypingMutation, UserTypingMutationVariables>;
-export type UserTypingComponentProps = Omit<ApolloReactComponents.MutationComponentOptions<UserTypingMutation, UserTypingMutationVariables>, 'mutation'>;
+export type TypeMessageMutationFn = ApolloReactCommon.MutationFunction<TypeMessageMutation, TypeMessageMutationVariables>;
+export type TypeMessageComponentProps = Omit<ApolloReactComponents.MutationComponentOptions<TypeMessageMutation, TypeMessageMutationVariables>, 'mutation'>;
 
-    export const UserTypingComponent = (props: UserTypingComponentProps) => (
-      <ApolloReactComponents.Mutation<UserTypingMutation, UserTypingMutationVariables> mutation={UserTypingDocument} {...props} />
+    export const TypeMessageComponent = (props: TypeMessageComponentProps) => (
+      <ApolloReactComponents.Mutation<TypeMessageMutation, TypeMessageMutationVariables> mutation={TypeMessageDocument} {...props} />
     );
     
 
 /**
- * __useUserTypingMutation__
+ * __useTypeMessageMutation__
  *
- * To run a mutation, you first call `useUserTypingMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useUserTypingMutation` returns a tuple that includes:
+ * To run a mutation, you first call `useTypeMessageMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useTypeMessageMutation` returns a tuple that includes:
  * - A mutate function that you can call at any time to execute the mutation
  * - An object with fields that represent the current status of the mutation's execution
  *
  * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
  *
  * @example
- * const [userTypingMutation, { data, loading, error }] = useUserTypingMutation({
+ * const [typeMessageMutation, { data, loading, error }] = useTypeMessageMutation({
  *   variables: {
  *      chatId: // value for 'chatId'
  *      username: // value for 'username'
  *   },
  * });
  */
-export function useUserTypingMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<UserTypingMutation, UserTypingMutationVariables>) {
-        return ApolloReactHooks.useMutation<UserTypingMutation, UserTypingMutationVariables>(UserTypingDocument, baseOptions);
+export function useTypeMessageMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<TypeMessageMutation, TypeMessageMutationVariables>) {
+        return ApolloReactHooks.useMutation<TypeMessageMutation, TypeMessageMutationVariables>(TypeMessageDocument, baseOptions);
       }
-export type UserTypingMutationHookResult = ReturnType<typeof useUserTypingMutation>;
-export type UserTypingMutationResult = ApolloReactCommon.MutationResult<UserTypingMutation>;
-export type UserTypingMutationOptions = ApolloReactCommon.BaseMutationOptions<UserTypingMutation, UserTypingMutationVariables>;
+export type TypeMessageMutationHookResult = ReturnType<typeof useTypeMessageMutation>;
+export type TypeMessageMutationResult = ApolloReactCommon.MutationResult<TypeMessageMutation>;
+export type TypeMessageMutationOptions = ApolloReactCommon.BaseMutationOptions<TypeMessageMutation, TypeMessageMutationVariables>;
 export const UsersDocument = gql`
     query users($username: String) {
   users(username: $username) {
-    id
-    email
-    avatar
-    online
-    username
-    lastSeen
-    createdAt
+    ...userFragment
   }
 }
-    `;
+    ${UserFragmentFragmentDoc}`;
 export type UsersComponentProps = Omit<ApolloReactComponents.QueryComponentOptions<UsersQuery, UsersQueryVariables>, 'query'>;
 
     export const UsersComponent = (props: UsersComponentProps) => (
@@ -1238,15 +1364,10 @@ export type UsersQueryResult = ApolloReactCommon.QueryResult<UsersQuery, UsersQu
 export const CurrentUserDocument = gql`
     query currentUser {
   currentUser {
-    id
-    email
-    avatar
-    online
-    username
-    createdAt
+    ...userFragment
   }
 }
-    `;
+    ${UserFragmentFragmentDoc}`;
 export type CurrentUserComponentProps = Omit<ApolloReactComponents.QueryComponentOptions<CurrentUserQuery, CurrentUserQueryVariables>, 'query'>;
 
     export const CurrentUserComponent = (props: CurrentUserComponentProps) => (
@@ -1278,8 +1399,8 @@ export function useCurrentUserLazyQuery(baseOptions?: ApolloReactHooks.LazyQuery
 export type CurrentUserQueryHookResult = ReturnType<typeof useCurrentUserQuery>;
 export type CurrentUserLazyQueryHookResult = ReturnType<typeof useCurrentUserLazyQuery>;
 export type CurrentUserQueryResult = ApolloReactCommon.QueryResult<CurrentUserQuery, CurrentUserQueryVariables>;
-export const SubOnlineUserDocument = gql`
-    subscription subOnlineUser {
+export const OnlineUserDocument = gql`
+    subscription onlineUser {
   onlineUser {
     id
     online
@@ -1287,63 +1408,63 @@ export const SubOnlineUserDocument = gql`
   }
 }
     `;
-export type SubOnlineUserComponentProps = Omit<ApolloReactComponents.SubscriptionComponentOptions<SubOnlineUserSubscription, SubOnlineUserSubscriptionVariables>, 'subscription'>;
+export type OnlineUserComponentProps = Omit<ApolloReactComponents.SubscriptionComponentOptions<OnlineUserSubscription, OnlineUserSubscriptionVariables>, 'subscription'>;
 
-    export const SubOnlineUserComponent = (props: SubOnlineUserComponentProps) => (
-      <ApolloReactComponents.Subscription<SubOnlineUserSubscription, SubOnlineUserSubscriptionVariables> subscription={SubOnlineUserDocument} {...props} />
+    export const OnlineUserComponent = (props: OnlineUserComponentProps) => (
+      <ApolloReactComponents.Subscription<OnlineUserSubscription, OnlineUserSubscriptionVariables> subscription={OnlineUserDocument} {...props} />
     );
     
 
 /**
- * __useSubOnlineUserSubscription__
+ * __useOnlineUserSubscription__
  *
- * To run a query within a React component, call `useSubOnlineUserSubscription` and pass it any options that fit your needs.
- * When your component renders, `useSubOnlineUserSubscription` returns an object from Apollo Client that contains loading, error, and data properties
+ * To run a query within a React component, call `useOnlineUserSubscription` and pass it any options that fit your needs.
+ * When your component renders, `useOnlineUserSubscription` returns an object from Apollo Client that contains loading, error, and data properties
  * you can use to render your UI.
  *
  * @param baseOptions options that will be passed into the subscription, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const { data, loading, error } = useSubOnlineUserSubscription({
+ * const { data, loading, error } = useOnlineUserSubscription({
  *   variables: {
  *   },
  * });
  */
-export function useSubOnlineUserSubscription(baseOptions?: ApolloReactHooks.SubscriptionHookOptions<SubOnlineUserSubscription, SubOnlineUserSubscriptionVariables>) {
-        return ApolloReactHooks.useSubscription<SubOnlineUserSubscription, SubOnlineUserSubscriptionVariables>(SubOnlineUserDocument, baseOptions);
+export function useOnlineUserSubscription(baseOptions?: ApolloReactHooks.SubscriptionHookOptions<OnlineUserSubscription, OnlineUserSubscriptionVariables>) {
+        return ApolloReactHooks.useSubscription<OnlineUserSubscription, OnlineUserSubscriptionVariables>(OnlineUserDocument, baseOptions);
       }
-export type SubOnlineUserSubscriptionHookResult = ReturnType<typeof useSubOnlineUserSubscription>;
-export type SubOnlineUserSubscriptionResult = ApolloReactCommon.SubscriptionResult<SubOnlineUserSubscription>;
-export const SubUserTypingDocument = gql`
-    subscription subUserTyping($chatId: Int!) {
-  userTyping(chatId: $chatId)
+export type OnlineUserSubscriptionHookResult = ReturnType<typeof useOnlineUserSubscription>;
+export type OnlineUserSubscriptionResult = ApolloReactCommon.SubscriptionResult<OnlineUserSubscription>;
+export const TypingUserDocument = gql`
+    subscription typingUser($chatId: Int!) {
+  typingUser(chatId: $chatId)
 }
     `;
-export type SubUserTypingComponentProps = Omit<ApolloReactComponents.SubscriptionComponentOptions<SubUserTypingSubscription, SubUserTypingSubscriptionVariables>, 'subscription'>;
+export type TypingUserComponentProps = Omit<ApolloReactComponents.SubscriptionComponentOptions<TypingUserSubscription, TypingUserSubscriptionVariables>, 'subscription'>;
 
-    export const SubUserTypingComponent = (props: SubUserTypingComponentProps) => (
-      <ApolloReactComponents.Subscription<SubUserTypingSubscription, SubUserTypingSubscriptionVariables> subscription={SubUserTypingDocument} {...props} />
+    export const TypingUserComponent = (props: TypingUserComponentProps) => (
+      <ApolloReactComponents.Subscription<TypingUserSubscription, TypingUserSubscriptionVariables> subscription={TypingUserDocument} {...props} />
     );
     
 
 /**
- * __useSubUserTypingSubscription__
+ * __useTypingUserSubscription__
  *
- * To run a query within a React component, call `useSubUserTypingSubscription` and pass it any options that fit your needs.
- * When your component renders, `useSubUserTypingSubscription` returns an object from Apollo Client that contains loading, error, and data properties
+ * To run a query within a React component, call `useTypingUserSubscription` and pass it any options that fit your needs.
+ * When your component renders, `useTypingUserSubscription` returns an object from Apollo Client that contains loading, error, and data properties
  * you can use to render your UI.
  *
  * @param baseOptions options that will be passed into the subscription, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const { data, loading, error } = useSubUserTypingSubscription({
+ * const { data, loading, error } = useTypingUserSubscription({
  *   variables: {
  *      chatId: // value for 'chatId'
  *   },
  * });
  */
-export function useSubUserTypingSubscription(baseOptions?: ApolloReactHooks.SubscriptionHookOptions<SubUserTypingSubscription, SubUserTypingSubscriptionVariables>) {
-        return ApolloReactHooks.useSubscription<SubUserTypingSubscription, SubUserTypingSubscriptionVariables>(SubUserTypingDocument, baseOptions);
+export function useTypingUserSubscription(baseOptions?: ApolloReactHooks.SubscriptionHookOptions<TypingUserSubscription, TypingUserSubscriptionVariables>) {
+        return ApolloReactHooks.useSubscription<TypingUserSubscription, TypingUserSubscriptionVariables>(TypingUserDocument, baseOptions);
       }
-export type SubUserTypingSubscriptionHookResult = ReturnType<typeof useSubUserTypingSubscription>;
-export type SubUserTypingSubscriptionResult = ApolloReactCommon.SubscriptionResult<SubUserTypingSubscription>;
+export type TypingUserSubscriptionHookResult = ReturnType<typeof useTypingUserSubscription>;
+export type TypingUserSubscriptionResult = ApolloReactCommon.SubscriptionResult<TypingUserSubscription>;

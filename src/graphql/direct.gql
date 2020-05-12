@@ -1,6 +1,13 @@
 mutation createDirect($userId: Int!, $text: String) {
   createDirect(userId: $userId, text: $text) {
     id
+    user {
+      ...userFragment
+    }
+    lastMessage {
+      ...messageFragment
+    }
+    unread
   }
 }
 
@@ -12,19 +19,23 @@ query directs {
   directs {
     id
     user {
-      id
-      email
-      avatar
-      online
-      username
-      lastSeen
-      createdAt
+      ...userFragment
     }
     lastMessage {
-      id
-      text
-      userId
-      createdAt
+      ...messageFragment
+    }
+    unread
+  }
+}
+
+query direct($id: Int!) {
+  direct(id: $id) {
+    id
+    user {
+      ...userFragment
+    }
+    lastMessage {
+      ...messageFragment
     }
     unread
   }
@@ -34,52 +45,34 @@ query currentDirect($userId: Int!) {
   currentDirect(userId: $userId) {
     direct {
       id
+      user {
+        ...userFragment
+      }
+      lastMessage {
+        ...messageFragment
+      }
+      unread
     }
     recipient {
-      id
-      email
-      avatar
-      online
-      username
-      lastSeen
-      createdAt
+      ...userFragment
     }
   }
 }
 
-query directLastMessage($chatId: Int!) {
-  directLastMessage(chatId: $chatId) {
-    id
-    text
-    userId
-    createdAt
-  }
-}
-
-subscription subDeleteDirect {
-  deleteDirect {
+subscription directDeleted {
+  direct: directDeleted {
     id
   }
 }
 
-subscription subNewDirect {
-  newDirect {
+subscription directCreated {
+  direct: directCreated {
     id
     user {
-      id
-      email
-      avatar
-      online
-      username
-      lastSeen
-      createdAt
+      ...userFragment
     }
     lastMessage {
-      id
-      text
-      userId
-      unread
-      createdAt
+      ...messageFragment
     }
     unread
   }

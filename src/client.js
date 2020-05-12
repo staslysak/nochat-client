@@ -6,6 +6,19 @@ import { InMemoryCache } from "apollo-cache-inmemory";
 import { onError } from "apollo-link-error";
 import { getMainDefinition } from "apollo-utilities";
 import { authTokens } from "utils/index";
+import { RefreshTokensDocument } from "graphql/generated.tsx";
+
+const refreshTokens = async () =>
+  await client
+    .query({
+      query: RefreshTokensDocument,
+      fetchPolicy: "no-cache",
+      variables: { refreshToken: authTokens.get("refreshToken") },
+    })
+    .then(({ data }) => {
+      authTokens.set(data.tokens);
+      return data.tokens;
+    });
 
 const httpLink = new HttpLink({
   uri: `${process.env.REACT_APP_API_URI}/graphql`,
@@ -15,72 +28,79 @@ export const wsLink = new WebSocketLink({
   uri: `${process.env.REACT_APP_SOCKET_URI}/graphql`,
   options: {
     reconnect: true,
-    connectionParams: () => {
-      const { token, refreshToken } = authTokens.get();
-      // console.log("connectionParams token", token);
-      // console.log("connectionParams refreshToken", refreshToken);
-      return {
-        "x-token": token,
-        "x-refresh-token": refreshToken,
-      };
+    connectionParams: () => ({
+      authorization: authTokens.get("accessToken"),
+    }),
+    connectionCallback() {
+      console.log("CONNECTION_TOKEN", authTokens.get("accessToken"));
     },
   },
 });
 
-const afterwareLink = new ApolloLink((operation, forward) =>
-  forward(operation).map((response) => {
-    const context = operation.getContext();
-    const {
-      response: { headers },
-    } = context;
-    const token = headers.get("x-token");
-    const refreshToken = headers.get("x-refresh-token");
-    if (token && refreshToken) {
-      authTokens.set({ token, refreshToken });
-    }
-
-    return response;
-  })
-);
-
-const authLink = new ApolloLink((operation, forward) => {
-  operation.setContext(({ headers }) => {
-    const { token, refreshToken } = authTokens.get();
-    return {
+export const getRefreshedTokens = async (operation, forward) => {
+  await refreshTokens().then(({ accessToken }) => {
+    console.log("ACCESS_TOKEN", accessToken);
+    operation.setContext(({ headers = {} }) => ({
       headers: {
         ...headers,
-        "x-token": token,
-        "x-refresh-token": refreshToken,
+        authorization: accessToken,
       },
-    };
+    }));
+
+    wsLink.subscriptionClient.tryReconnect();
+
+    forward(operation).subscribe({
+      next: ({ data }) => {
+        const { query, variables } = operation;
+        if (data?.directs) client.query({ query, variables, data });
+        if (data?.currentUser) client.query({ query, variables, data });
+        if (data?.currentDirect) client.query({ query, variables, data });
+      },
+    });
   });
+};
+
+const authLink = new ApolloLink((operation, forward) => {
+  operation.setContext(({ headers }) => ({
+    headers: {
+      ...headers,
+      authorization: authTokens.get("accessToken"),
+    },
+  }));
 
   return forward(operation);
 });
 
-const errorMiddleware = onError(({ graphQLErrors, networkError }) => {
-  if (graphQLErrors)
-    graphQLErrors.forEach(({ message, locations, path, extensions }) => {
-      console.log(
-        `[GraphQL error]: 
-          Message: ${message}, 
-          Location: ${locations}, 
-          Path: ${path}`
-      );
-      if (
-        ["UNAUTHENTICATED", "INTERNAL_SERVER_ERROR"].includes(extensions.code) // "INTERNAL_SERVER_ERROR"
-      ) {
-        // authTokens.remove()
-      }
-    });
+const errorMiddleware = onError(
+  ({ graphQLErrors, networkError, operation, forward }) => {
+    if (graphQLErrors) {
+      graphQLErrors.map(async ({ message, path, extensions }) => {
+        if (extensions.code === "UNAUTHENTICATED") {
+          getRefreshedTokens(operation, forward);
+        }
 
-  if (networkError) {
-    console.log(`[Network error]: ${networkError}`);
+        if (extensions.code === "INTERNAL_SERVER_ERROR") {
+          authTokens.remove();
+        }
+
+        console.log(
+          `[GraphQL ERROR]:
+          CODE: ${extensions.code},
+          Message: ${message},
+          Path: ${path}
+      `
+        );
+      });
+    }
+
+    if (networkError) {
+      console.log(`[Network error]: ${networkError}`);
+    }
   }
-});
+);
 
-const httpLinkWithMiddleware = errorMiddleware.concat(
-  afterwareLink.concat(authLink.concat(httpLink))
+const httpLinkWithMiddleware = authLink.concat(
+  ApolloLink.from([errorMiddleware, httpLink])
 );
 
 const link = split(
@@ -92,7 +112,6 @@ const link = split(
     );
   },
   wsLink,
-  // errorMiddleware,
   httpLinkWithMiddleware
 );
 

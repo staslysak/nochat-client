@@ -13,7 +13,7 @@ const Sidebar = (props) => {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
 
-  const renderDirectsList = (data, addProps = {}) => {
+  const renderDirectsList = (data, restProps = {}) => {
     return data ? (
       <StyledList disablePadding>
         {data.map((direct) => (
@@ -30,7 +30,7 @@ const Sidebar = (props) => {
             selected={direct.user.id === props.chatId}
             onDelete={props.onDeleteDirect}
             subscribtions={props.directSubscriptions}
-            {...addProps}
+            {...restProps}
           />
         ))}
       </StyledList>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import {
   BrowserRouter as Router,
   Route,
@@ -6,18 +6,8 @@ import {
   Redirect,
 } from "react-router-dom";
 import { CssBaseline } from "@material-ui/core";
-import Loadable from "react-loadable";
 import { isAuthorized } from "utils/index";
-
-const createLoadableComponent = (pathResolver) => {
-  return Loadable({
-    loader: pathResolver,
-    loading: (props) => {
-      if (props.error) console.error(props.error);
-      return null;
-    },
-  });
-};
+import {Loader} from 'components/Fallback'
 
 const PrivateRoute = ({ component: Component, ...rest }) => (
   <Route
@@ -36,7 +26,7 @@ const privateRoutes = [
   {
     path: "/me",
     exact: false,
-    component: createLoadableComponent(() => import("./pages/Home")),
+    component: lazy(() => import("./pages/Home")),
   },
 ];
 
@@ -44,18 +34,18 @@ const publicRoutes = [
   {
     path: "/(login|registration)",
     exact: true,
-    component: createLoadableComponent(() => import("./pages/Login")),
+    component: lazy(() => import("./pages/Login")),
   },
   {
     path: "/verify",
     exact: true,
-    component: createLoadableComponent(() => import("./pages/VerifyUser")),
+    component: lazy(() => import("./pages/VerifyUser")),
   },
 ];
 
 const App = () => {
   return (
-    <>
+    <Suspense fallback={<Loader />}>
       <CssBaseline />
       <Router>
         <Switch>
@@ -71,7 +61,7 @@ const App = () => {
           />
         </Switch>
       </Router>
-    </>
+    </Suspense>
   );
 };
 

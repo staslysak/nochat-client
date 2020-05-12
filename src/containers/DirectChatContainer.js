@@ -1,60 +1,69 @@
 import React from "react";
-// import { get } from "lodash-es";
 import DirectChat from "components/DirectChat";
 import { useTyping } from "hooks/index";
 import {
-  SubNewDirectDocument,
-  SubUserTypingDocument,
-  SubDeleteDirectDocument,
-  SubNewMessageDocument,
-  SubDeleteMessageDocument,
+  DirectCreatedDocument,
+  GetMessagesDocument,
+  TypingUserDocument,
+  DirectDeletedDocument,
+  MessageCreatedDocument,
+  MessageDeletedDocument,
   useCreateDirectMutation,
   useDeleteDirectMutation,
   useCreateMessageMutation,
   useDeleteMessageMutation,
   useReadMessageMutation,
-  useUserTypingMutation,
+  useTypeMessageMutation,
   useCurrentUserQuery,
   useCurrentDirectQuery,
-  useGetChatMessagesQuery,
+  useGetMessagesQuery,
 } from "graphql/generated.tsx";
+import { errorHandler } from "utils/index";
 
 const DirectChatContainer = ({ userId }) => {
   const [state, setstate] = React.useState({
     hasMore: true,
   });
 
-  const currentUser = useCurrentUserQuery();
+  const currentUser = useCurrentUserQuery({ onError: errorHandler });
   const currentDirect = useCurrentDirectQuery({
+    onError: errorHandler,
     variables: { userId },
     skip: !userId,
   });
-  const [createDirect] = useCreateDirectMutation();
-  const [deleteDirect] = useDeleteDirectMutation();
-  const [createMessage] = useCreateMessageMutation();
-  const [deleteMessage] = useDeleteMessageMutation();
-  const [readMessage] = useReadMessageMutation();
-  const [userTyping] = useUserTypingMutation();
+  const [createDirect, { client }] = useCreateDirectMutation({
+    onError: errorHandler,
+  });
+  const [deleteDirect] = useDeleteDirectMutation({ onError: errorHandler });
+  const [createMessage] = useCreateMessageMutation({ onError: errorHandler });
+  const [deleteMessage] = useDeleteMessageMutation({ onError: errorHandler });
+  const [readMessage] = useReadMessageMutation({ onError: errorHandler });
+  const [typeMessage] = useTypeMessageMutation();
 
   const self = currentUser?.data?.currentUser ?? {};
   const recipient = currentDirect?.data?.currentDirect?.recipient ?? {};
   const chatId = currentDirect?.data?.currentDirect?.direct?.id ?? null;
 
-  const chatMessagesData = useGetChatMessagesQuery({
+  const {
+    data: messagesData,
+    fetchMore,
+    subscribeToMore: subscribeToMoreMessages,
+  } = useGetMessagesQuery({
+    onError: errorHandler,
     variables: { chatId },
     skip: !chatId,
   });
 
-  const messages = chatId ? chatMessagesData?.data?.messages : [];
+  const messages = chatId ? messagesData?.messages ?? [] : [];
 
   const [typingUser, onTyping] = useTyping(
     { chatId, username: self.username },
-    (variables) => userTyping({ variables })
+    (variables) => typeMessage({ variables })
   );
 
   const loadMoreMessages = () => {
-    if (chatMessagesData.data && state.hasMore && chatId) {
-      chatMessagesData.fetchMore({
+    if (messagesData && state.hasMore && chatId) {
+      fetchMore({
         variables: { chatId, offset: messages.length },
         updateQuery: (prev, { fetchMoreResult }) => {
           const limit = 20;
@@ -74,124 +83,112 @@ const DirectChatContainer = ({ userId }) => {
   };
 
   React.useEffect(() => {
-    const subscribeToNewMessage = () => {
-      try {
-        return chatMessagesData.subscribeToMore({
-          document: SubNewMessageDocument,
-          variables: { chatId },
+    const subscribtions = {
+      messageCreated: () => {
+        return subscribeToMoreMessages({
+          document: MessageCreatedDocument,
+          variables: { chatIds: [chatId] },
           updateQuery: (prev, { subscriptionData }) => {
-            if (!subscriptionData.data) return prev;
-            const { newMessage } = subscriptionData.data;
-
-            return { messages: [newMessage, ...prev.messages] };
-          },
-        });
-      } catch (error) {
-        return () => {};
-      }
-    };
-
-    const unsubsribe = subscribeToNewMessage();
-    return () => unsubsribe();
-  }, [chatMessagesData.data, chatId]);
-
-  React.useEffect(() => {
-    const subscribeToNewDirect = () => {
-      try {
-        return currentDirect.subscribeToMore({
-          document: SubNewDirectDocument,
-          updateQuery: (prev, { subscriptionData }) => {
-            if (!subscriptionData.data) return prev;
-            const { newDirect } = subscriptionData.data;
-
+            if (!subscriptionData.data || !prev) return prev;
             return {
-              currentDirect: { ...prev.currentDirect, direct: newDirect },
+              messages: [
+                subscriptionData.data.messageCreated,
+                ...prev.messages,
+              ],
             };
           },
         });
-      } catch (error) {
-        return () => {};
-      }
-    };
-
-    const unsubsribe = subscribeToNewDirect();
-    return () => unsubsribe();
-  }, [currentDirect]);
-
-  React.useEffect(() => {
-    const subscribeToDeleteMessage = () => {
-      try {
-        return chatMessagesData.subscribeToMore({
-          document: SubDeleteMessageDocument,
-          variables: { chatId },
+      },
+      messagesDeleted: () => {
+        return subscribeToMoreMessages({
+          document: MessageDeletedDocument,
+          variables: { chatIds: [chatId] },
           updateQuery: (prev, { subscriptionData }) => {
             if (!subscriptionData.data) return prev;
-            const { deleteMessage } = subscriptionData.data;
-
             const messages = prev.messages.filter(
-              ({ id }) => id !== deleteMessage.id
+              (message) =>
+                subscriptionData.data.messageDeleted.ids !== message.id
             );
+
+            client.writeQuery({
+              query: GetMessagesDocument,
+              data: { messages },
+            });
 
             return { messages };
           },
         });
-      } catch (error) {
-        return () => {};
-      }
+      },
     };
 
-    const unsubsribe = subscribeToDeleteMessage();
-    return () => unsubsribe();
-  }, [chatMessagesData.data, chatId]);
+    const messageCreated = subscribtions.messageCreated();
+    const messageDeleted = subscribtions.messagesDeleted();
+
+    return () => {
+      messageCreated();
+      messageDeleted();
+    };
+  }, [subscribeToMoreMessages, chatId]);
 
   React.useEffect(() => {
-    const subscribeToDeleteDirect = () => {
-      try {
-        return currentDirect.subscribeToMore({
-          document: SubDeleteDirectDocument,
-          variables: { chatId },
+    const subscribtions = {
+      directCreated: () =>
+        currentDirect.subscribeToMore({
+          document: DirectCreatedDocument,
           updateQuery: (prev, { subscriptionData }) => {
             if (!subscriptionData.data) return prev;
-            const { deleteDirect } = subscriptionData.data;
 
-            if (deleteDirect.id === chatId) {
-              return { currentDirect: { ...prev.currentDirect, direct: null } };
+            return {
+              currentDirect: {
+                ...prev.currentDirect,
+                direct: subscriptionData.data.direct,
+              },
+            };
+          },
+        }),
+      directDeleted: () =>
+        currentDirect.subscribeToMore({
+          document: DirectDeletedDocument,
+          updateQuery: (prev, { subscriptionData }) => {
+            if (
+              !subscriptionData.data ||
+              subscriptionData.data.direct.id !== chatId
+            ) {
+              return prev;
+            }
+
+            return { currentDirect: { ...prev.currentDirect, direct: null } };
+          },
+        }),
+    };
+
+    const directCreated = subscribtions.directCreated();
+    const directDeleted = subscribtions.directDeleted();
+    return () => {
+      directCreated();
+      directDeleted();
+    };
+  }, [currentDirect, chatId]);
+
+  React.useEffect(() => {
+    const subscribe = () => {
+      if (chatId) {
+        return currentDirect.subscribeToMore({
+          document: TypingUserDocument,
+          variables: { chatId },
+          updateQuery: (prev, { subscriptionData }) => {
+            if (subscriptionData.data) {
+              typingUser.setUser(subscriptionData.data.typingUser);
             }
 
             return prev;
           },
         });
-      } catch (error) {
-        return () => {};
       }
+      return () => {};
     };
-
-    const unsubsribe = subscribeToDeleteDirect();
-    return () => unsubsribe();
-  }, [currentDirect, chatId]);
-
-  React.useEffect(() => {
-    const subscribeToUserTyping = () => {
-      try {
-        return currentDirect.subscribeToMore({
-          document: SubUserTypingDocument,
-          variables: { chatId },
-          updateQuery: (prev, { subscriptionData }) => {
-            if (!subscriptionData.data) return prev;
-            const { userTyping } = subscriptionData.data;
-
-            typingUser.setUser(userTyping);
-
-            return prev;
-          },
-        });
-      } catch (error) {
-        return () => {};
-      }
-    };
-
-    const unsubsribe = subscribeToUserTyping();
-    return () => unsubsribe();
+    const unsubscribe = subscribe();
+    return unsubscribe;
   }, [currentDirect, chatId]);
 
   const onCreateMessage = async (text) => {
@@ -199,7 +196,7 @@ const DirectChatContainer = ({ userId }) => {
       await createDirect({ variables: { text, userId: recipient.id } });
     } else {
       await createMessage({ variables: { text, chatId } });
-      await userTyping({ variables: { chatId, username: "" } });
+      await typeMessage({ variables: { chatId, username: "" } });
     }
   };
 
@@ -217,9 +214,9 @@ const DirectChatContainer = ({ userId }) => {
     <DirectChat
       user={self}
       chatId={chatId}
-      recipient={recipient || {}}
+      recipient={recipient}
       hasMore={state.hasMore}
-      messages={messages || []}
+      messages={messages}
       typingUser={typingUser.user === self.username ? "" : typingUser.user}
       onTyping={onTyping}
       onCreateMessage={onCreateMessage}

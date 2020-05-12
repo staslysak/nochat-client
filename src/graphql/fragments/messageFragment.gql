@@ -1,0 +1,8 @@
+fragment messageFragment on Message {
+  id
+  text
+  userId
+  chatId
+  unread
+  createdAt
+}

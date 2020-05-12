@@ -1,6 +1,6 @@
 import React from "react";
 import { render } from "react-dom";
-import { ApolloProvider } from "@apollo/react-hooks";
+import { ApolloProvider } from "react-apollo";
 import { client } from "./client";
 import { ThemeProvider, StylesProvider } from "@material-ui/core";
 import { theme, jss } from "./theme";

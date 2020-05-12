@@ -10,30 +10,30 @@ mutation readMessage($id: Int!) {
   readMessage(id: $id)
 }
 
-query getChatMessages($chatId: Int!, $offset: Int) {
+query getMessages($chatId: Int!, $offset: Int) {
   messages(chatId: $chatId, offset: $offset) {
-    id
-    text
-    userId
-    unread
-    createdAt
+    ...messageFragment
   }
 }
 
-subscription subNewMessage($chatId: Int!) {
-  newMessage(chatId: $chatId) {
-    id
-    text
-    userId
-    chatId
-    unread
-    createdAt
+subscription messageCreated($chatIds: [Int]) {
+  messageCreated(chatIds: $chatIds) {
+    ...messageFragment
   }
 }
 
-subscription subDeleteMessage($chatId: Int!) {
-  deleteMessage(chatId: $chatId) {
-    id
-    userId
+subscription messageDeleted($chatIds: [Int]) {
+  messageDeleted(chatIds: $chatIds) {
+    ids
+    chat {
+      id
+      lastMessage {
+        ...messageFragment
+      }
+      user {
+        ...userFragment
+      }
+      unread
+    }
   }
 }

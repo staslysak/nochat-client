@@ -1,31 +1,20 @@
-mutation userTyping($chatId: Int!, $username: String) {
-  userTyping(chatId: $chatId, username: $username)
+mutation typeMessage($chatId: Int!, $username: String) {
+  typeMessage(chatId: $chatId, username: $username)
 }
 
 query users($username: String) {
   users(username: $username) {
-    id
-    email
-    avatar
-    online
-    username
-    lastSeen
-    createdAt
+    ...userFragment
   }
 }
 
 query currentUser {
   currentUser {
-    id
-    email
-    avatar
-    online
-    username
-    createdAt
+    ...userFragment
   }
 }
 
-subscription subOnlineUser {
+subscription onlineUser {
   onlineUser {
     id
     online
@@ -33,6 +22,6 @@ subscription subOnlineUser {
   }
 }
 
-subscription subUserTyping($chatId: Int!) {
-  userTyping(chatId: $chatId)
+subscription typingUser($chatId: Int!) {
+  typingUser(chatId: $chatId)
 }

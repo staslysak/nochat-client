@@ -1,7 +1,6 @@
 import React from "react";
 import { Container } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
-import { withRouter } from "react-router-dom";
 import SidebarContainer from "containers/SidebarContainer";
 
 const useStyles = makeStyles((theme) => ({
@@ -19,15 +18,15 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const Layout = ({ children, ...props }) => {
+const Layout = (props) => {
   const classes = useStyles();
 
   return (
     <Container maxWidth="md" className={classes.container}>
-      <SidebarContainer {...props} />
-      <div className={classes.contentShift}>{children}</div>
+      <SidebarContainer />
+      <div className={classes.contentShift}>{props.children}</div>
     </Container>
   );
 };
 
-export default withRouter(Layout);
+export default Layout;

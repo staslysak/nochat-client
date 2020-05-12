@@ -15,8 +15,8 @@ const VerifyUser = (props) => {
   });
 
   React.useEffect(() => {
-    const { token } = pasreQuery(props.location);
-    verifyUser({ variables: { secret: token } });
+    const { token: secret } = pasreQuery(props.location);
+    verifyUser({ variables: { secret } });
   }, [verifyUser]);
 
   return null;
