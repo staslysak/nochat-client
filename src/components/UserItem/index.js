@@ -4,25 +4,21 @@ import { Link } from "react-router-dom";
 import Avatar from "components/Avatar";
 import { useStyles } from "./styles";
 
-const UserItem = (props) => {
+const UserItem = ({ link, user, ...props }) => {
   const classes = useStyles();
 
   return (
-    <ListItem {...props} dense button to={props.link} component={Link}>
+    <ListItem {...props} dense button to={link} component={Link}>
       <ListItemAvatar>
-        <Avatar
-          src={props.user.avatar}
-          alt={props.user.username}
-          online={props.user.online}
-        />
+        <Avatar src={user.avatar} alt={user.username} online={user.online} />
       </ListItemAvatar>
       <ListItemText
-        primary={props.user.username}
+        primary={user.username}
         primaryTypographyProps={{
           component: "div",
           className: classes.UserItem_primary,
         }}
-        secondary={`@${props.user.username}`}
+        secondary={`@${user.username}`}
         secondaryTypographyProps={{
           variant: "caption",
           component: "div",

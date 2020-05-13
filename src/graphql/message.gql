@@ -10,6 +10,10 @@ mutation readMessage($id: Int!) {
   readMessage(id: $id)
 }
 
+mutation typeMessage($chatId: Int!, $username: String) {
+  typeMessage(chatId: $chatId, username: $username)
+}
+
 query getMessages($chatId: Int!, $offset: Int) {
   messages(chatId: $chatId, offset: $offset) {
     ...messageFragment

@@ -1,7 +1,3 @@
-mutation typeMessage($chatId: Int!, $username: String) {
-  typeMessage(chatId: $chatId, username: $username)
-}
-
 query users($username: String) {
   users(username: $username) {
     ...userFragment

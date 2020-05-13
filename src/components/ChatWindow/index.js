@@ -1,35 +1,32 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import useStyles from "./styles";
 
-const ChatWindow = (props) => {
+const ChatWindow = ({ send, messages, onLoadMore, renderMessages }) => {
   const classes = useStyles();
-  const chatWindowRef = React.useRef(null);
+  const chatWindowRef = useRef(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleUpdateView = () => {
       const { scrollTop, scrollHeight, offsetHeight } = chatWindowRef.current;
-      if (props.messages && props.messages.length <= 20) {
+      if (messages?.length <= 20) {
         chatWindowRef.current.scrollTop = scrollHeight;
       } else {
-        if (!(scrollTop + offsetHeight + 300 < scrollHeight) && !props.send) {
+        if (!(scrollTop + offsetHeight + 300 < scrollHeight) && !send) {
           chatWindowRef.current.scrollTop = scrollHeight;
         }
 
-        if (props.send) {
+        if (send) {
           chatWindowRef.current.scrollTop = scrollHeight;
         }
       }
     };
 
     handleUpdateView();
-  }, [props.messages]);
+  }, [messages]);
 
   const onScroll = async () => {
     if (chatWindowRef.current.scrollTop < 200) {
-      await props.onLoadMoreMessages();
-      if (props.hasMore) {
-        chatWindowRef.current.scrollTop = chatWindowRef.current.scrollTop + 10;
-      }
+      await onLoadMore();
     }
   };
 
@@ -41,7 +38,7 @@ const ChatWindow = (props) => {
         className={classes.ChatWindow_content}
       >
         {/* {props.children} */}
-        {props.renderMessages(props.messages)}
+        {renderMessages(messages)}
       </div>
     </div>
   );

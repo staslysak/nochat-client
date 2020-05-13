@@ -1,6 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
 import {
-  Box,
   Button,
   TextField,
   Typography,
@@ -9,7 +8,6 @@ import {
 import { useLoginMutation, useRegisterMutation } from "graphql/generated.tsx";
 import { Link } from "react-router-dom";
 import { makeStyles } from "@material-ui/core/styles";
-import { wsLink } from "client";
 import { authTokens } from "utils/index";
 
 const useStyles = makeStyles((theme) => ({
@@ -21,134 +19,115 @@ const useStyles = makeStyles((theme) => ({
     height: "100vh",
     width: "100vw",
   },
-  // Login: `
-  //   display: flex;
-  //   justify-content: center;
-  //   flex-direction: column;
-  //   align-items: center;
-  //   height: 100vh;
-  //   width: 100vw;
-  // `,
+  LoginForm: `
+    max-width: 300px;
+  `,
 }));
 
-const Login = (props) => {
+const Login = ({ history, location }) => {
   const classes = useStyles();
-  const [values, setValues] = React.useState({});
-  const [errors, setErrors] = React.useState({});
-  const [register] = useRegisterMutation();
-  const [login] = useLoginMutation();
-  const isRegister = /\/registration/.test(props.location.pathname);
+  const isRegister = /\/registration/.test(location.pathname);
+  const [values, setValues] = useState({});
+  const [errors, setErrors] = useState({});
+
+  const onComplete = ({ data }) => {
+    if (isRegister) {
+      alert("Check your email");
+      history.push("/login");
+    } else {
+      authTokens.set(data.login);
+      history.push("/me");
+    }
+    setErrors({});
+  };
+
+  const onError = (error) => {
+    if (error.graphQLErrors) {
+      error.graphQLErrors.forEach((err) =>
+        setErrors(err.extensions.validationErrors)
+      );
+    }
+  };
+
+  const [registerUser] = useRegisterMutation();
+  const [loginUser] = useLoginMutation();
 
   const handleOnChange = ({ target: { name, value } }) => {
     setValues((prevValues) => ({ ...prevValues, [name]: value }));
   };
 
-  const handleData = async (data) => {
-    if (isRegister) {
-      props.history.push("/login");
-    } else {
-      authTokens.set(data);
-      props.history.push("/me");
-    }
-    setErrors({});
-  };
-
-  const onSubmit = async (e) => {
+  const onSubmit = (e) => {
     e.preventDefault();
     if (isRegister) {
-      await register({ variables: values })
-        .then(({ data }) => handleData(data.register))
-        .then(() => alert("Check your email"))
-        .catch((error) => {
-          if (error.graphQLErrors) {
-            error.graphQLErrors.forEach((err) =>
-              setErrors(err.extensions.validationErrors)
-            );
-          }
-        });
+      registerUser({ variables: values }).then(onComplete).catch(onError);
     } else {
-      await login({ variables: values })
-        .then(({ data }) => {
-          handleData(data.login);
-          wsLink.subscriptionClient.tryReconnect();
-        })
-        .catch((error) => {
-          if (error.graphQLErrors) {
-            error.graphQLErrors.forEach((err) =>
-              setErrors(err.extensions.validationErrors)
-            );
-          }
-        });
+      loginUser({ variables: values }).then(onComplete).catch(onError);
     }
   };
 
-  const renderFields = () => {
-    return (
-      <div>
+  const renderFields = () => (
+    <div>
+      <TextField
+        fullWidth
+        margin="dense"
+        variant="outlined"
+        onChange={handleOnChange}
+        value={values.username}
+        label="Username"
+        name="username"
+        error={errors.username}
+        helperText={errors.username}
+      />
+      {isRegister && (
         <TextField
           fullWidth
           margin="dense"
           variant="outlined"
           onChange={handleOnChange}
-          value={values.username}
-          label="Username"
-          name="username"
-          error={errors.username}
-          helperText={errors.username}
+          value={values.email}
+          label="Email"
+          name="email"
+          error={errors.email}
+          helperText={errors.email}
         />
-        {isRegister && (
-          <TextField
-            fullWidth
-            margin="dense"
-            variant="outlined"
-            onChange={handleOnChange}
-            value={values.email}
-            label="Email"
-            name="email"
-            error={errors.email}
-            helperText={errors.email}
-          />
-        )}
-        <TextField
-          fullWidth
-          margin="dense"
-          variant="outlined"
-          onChange={handleOnChange}
-          value={values.password}
-          label="Password"
-          name="password"
-          type="password"
-          error={errors.password}
-          helperText={errors.password}
-        />
-      </div>
-    );
-  };
+      )}
+      <TextField
+        fullWidth
+        margin="dense"
+        variant="outlined"
+        onChange={handleOnChange}
+        value={values.password}
+        label="Password"
+        name="password"
+        type="password"
+        error={errors.password}
+        helperText={errors.password}
+      />
+    </div>
+  );
 
   return (
     <div className={classes.Login}>
-      <Box maxWidth={300}>
+      <div className={classes.LoginForm}>
         <Typography variant="h6" gutterBottom>
           {isRegister ? "Join" : "Login"}
         </Typography>
         <form onSubmit={onSubmit}>
           {renderFields()}
           <Typography align="center" variant="body2" gutterBottom>
-            {isRegister ? (
-              <MuiLink align="center" component={Link} to="/">
-                Already have an account?
-              </MuiLink>
-            ) : (
-              <MuiLink align="center" component={Link} to="/registration">
-                Not a member?
-              </MuiLink>
-            )}
+            <MuiLink
+              align="center"
+              component={Link}
+              to={isRegister ? "/login" : "/registration"}
+            >
+              {isRegister ? "Already have an account" : "Not a member"}
+            </MuiLink>
           </Typography>
           <Button type="submit" fullWidth>
             {isRegister ? "Join" : "Login"}
           </Button>
         </form>
-      </Box>
+      </div>
     </div>
   );
 };

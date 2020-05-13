@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import DirectChat from "components/DirectChat";
 import { useTyping } from "hooks/index";
+import { errorHandler } from "utils/index";
 import {
   DirectCreatedDocument,
   GetMessagesDocument,
@@ -18,10 +19,10 @@ import {
   useCurrentDirectQuery,
   useGetMessagesQuery,
 } from "graphql/generated.tsx";
-import { errorHandler } from "utils/index";
 
 const DirectChatContainer = ({ userId }) => {
-  const [state, setstate] = React.useState({
+  const [state, setstate] = useState({
+    limit: 20,
     hasMore: true,
   });
 
@@ -47,11 +48,13 @@ const DirectChatContainer = ({ userId }) => {
   const {
     data: messagesData,
     fetchMore,
+    loading,
     subscribeToMore: subscribeToMoreMessages,
   } = useGetMessagesQuery({
-    onError: errorHandler,
-    variables: { chatId },
     skip: !chatId,
+    variables: { chatId },
+    onError: errorHandler,
+    notifyOnNetworkStatusChange: true,
   });
 
   const messages = chatId ? messagesData?.messages ?? [] : [];
@@ -62,16 +65,14 @@ const DirectChatContainer = ({ userId }) => {
   );
 
   const loadMoreMessages = () => {
-    if (messagesData && state.hasMore && chatId) {
+    if (messagesData && state.hasMore && chatId && !loading) {
       fetchMore({
         variables: { chatId, offset: messages.length },
         updateQuery: (prev, { fetchMoreResult }) => {
-          const limit = 20;
-
           if (!fetchMoreResult) return prev;
 
-          if (fetchMoreResult.messages.length < limit) {
-            setstate({ hasMore: false });
+          if (fetchMoreResult.messages.length < state.limit) {
+            setstate((prev) => ({ ...prev, hasMore: false }));
           }
 
           return {
@@ -82,7 +83,7 @@ const DirectChatContainer = ({ userId }) => {
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     const subscribtions = {
       messageCreated: () => {
         return subscribeToMoreMessages({
@@ -130,7 +131,7 @@ const DirectChatContainer = ({ userId }) => {
     };
   }, [subscribeToMoreMessages, chatId]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const subscribtions = {
       directCreated: () =>
         currentDirect.subscribeToMore({
@@ -170,7 +171,7 @@ const DirectChatContainer = ({ userId }) => {
     };
   }, [currentDirect, chatId]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const subscribe = () => {
       if (chatId) {
         return currentDirect.subscribeToMore({
@@ -201,7 +202,7 @@ const DirectChatContainer = ({ userId }) => {
   };
 
   const onDeleteMessage = (id) => async () => {
-    if (messages && messages.length === 1) {
+    if (messages?.length === 1) {
       await deleteDirect({ variables: { id: chatId } });
     } else {
       await deleteMessage({ variables: { id } });
@@ -215,7 +216,6 @@ const DirectChatContainer = ({ userId }) => {
       user={self}
       chatId={chatId}
       recipient={recipient}
-      hasMore={state.hasMore}
       messages={messages}
       typingUser={typingUser.user === self.username ? "" : typingUser.user}
       onTyping={onTyping}

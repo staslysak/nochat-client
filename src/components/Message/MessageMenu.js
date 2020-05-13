@@ -9,7 +9,6 @@ const MessageMenu = ({ anchorEl, onClose, onDelete, onCopy }) => {
 
   return (
     <Menu
-      // keepMounted
       // anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
       anchorEl={anchorEl}
       open={Boolean(anchorEl)}

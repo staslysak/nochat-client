@@ -21,11 +21,6 @@ export const menuSchema = [
 
 const MenuDrawer = ({ user = {}, open, ...props }) => {
   const classes = useStyles();
-  // const open = false;
-
-  // const [open, setOpen] = React.useState(false);
-
-  // const handleMenuToggle = () => setOpen(!open);
 
   return (
     <>
@@ -44,19 +39,6 @@ const MenuDrawer = ({ user = {}, open, ...props }) => {
             </ListItem>
           </List>
           <List>
-            {/* {menuSchema.map(({ title, link, icon }) => (
-              <ListItem
-                key={title}
-                button
-                to={link}
-                className={classes.MenuDrawer_listItem}
-                component={link ? Link : "div"}
-                onClick={props.onClose}
-              >
-                {icon}
-                <Typography variant="body2">{title}</Typography>
-              </ListItem>
-            ))} */}
             <ListItem
               button
               className={classes.MenuDrawer_listItem}

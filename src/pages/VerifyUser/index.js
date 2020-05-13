@@ -2,24 +2,21 @@ import React from "react";
 import { pasreQuery, authTokens } from "utils/index";
 import { useVerifyUserMutation } from "graphql/generated.tsx";
 
-const VerifyUser = (props) => {
+export default ({ history, location }) => {
   const [verifyUser] = useVerifyUserMutation({
-    onCompleted: async (data) => {
-      authTokens.set(data.verifyUser);
-      props.history.push("/me");
+    onCompleted(data) {
+      authTokens.set(data.tokens);
+      history.push("/me");
     },
-    onError: (err) => {
-      props.history.push("/login");
-      console.log("verifyUserERROR", err);
+    onError() {
+      history.push("/login");
     },
   });
 
   React.useEffect(() => {
-    const { token: secret } = pasreQuery(props.location);
+    const { token: secret } = pasreQuery(location);
     verifyUser({ variables: { secret } });
   }, [verifyUser]);
 
   return null;
 };
-
-export default VerifyUser;

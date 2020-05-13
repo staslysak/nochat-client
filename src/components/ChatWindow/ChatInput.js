@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { InputBase, IconButton } from "@material-ui/core";
 import SendIcon from "@material-ui/icons/Send";
 import useStyles from "./styles";
@@ -6,10 +6,10 @@ import { withRouter } from "react-router-dom";
 
 const ChatInput = (props) => {
   const classes = useStyles();
-  const inputRef = React.useRef();
-  const [message, setMessage] = React.useState("");
+  const inputRef = useRef();
+  const [message, setMessage] = useState("");
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus();
     }

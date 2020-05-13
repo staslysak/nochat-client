@@ -431,6 +431,17 @@ export type ReadMessageMutation = (
   & Pick<Mutation, 'readMessage'>
 );
 
+export type TypeMessageMutationVariables = {
+  chatId: Scalars['Int'];
+  username?: Maybe<Scalars['String']>;
+};
+
+
+export type TypeMessageMutation = (
+  { __typename?: 'Mutation' }
+  & Pick<Mutation, 'typeMessage'>
+);
+
 export type GetMessagesQueryVariables = {
   chatId: Scalars['Int'];
   offset?: Maybe<Scalars['Int']>;
@@ -480,17 +491,6 @@ export type MessageDeletedSubscription = (
       )> }
     )> }
   ) }
-);
-
-export type TypeMessageMutationVariables = {
-  chatId: Scalars['Int'];
-  username?: Maybe<Scalars['String']>;
-};
-
-
-export type TypeMessageMutation = (
-  { __typename?: 'Mutation' }
-  & Pick<Mutation, 'typeMessage'>
 );
 
 export type UsersQueryVariables = {
@@ -1164,6 +1164,43 @@ export function useReadMessageMutation(baseOptions?: ApolloReactHooks.MutationHo
 export type ReadMessageMutationHookResult = ReturnType<typeof useReadMessageMutation>;
 export type ReadMessageMutationResult = ApolloReactCommon.MutationResult<ReadMessageMutation>;
 export type ReadMessageMutationOptions = ApolloReactCommon.BaseMutationOptions<ReadMessageMutation, ReadMessageMutationVariables>;
+export const TypeMessageDocument = gql`
+    mutation typeMessage($chatId: Int!, $username: String) {
+  typeMessage(chatId: $chatId, username: $username)
+}
+    `;
+export type TypeMessageMutationFn = ApolloReactCommon.MutationFunction<TypeMessageMutation, TypeMessageMutationVariables>;
+export type TypeMessageComponentProps = Omit<ApolloReactComponents.MutationComponentOptions<TypeMessageMutation, TypeMessageMutationVariables>, 'mutation'>;
+
+    export const TypeMessageComponent = (props: TypeMessageComponentProps) => (
+      <ApolloReactComponents.Mutation<TypeMessageMutation, TypeMessageMutationVariables> mutation={TypeMessageDocument} {...props} />
+    );
+    
+
+/**
+ * __useTypeMessageMutation__
+ *
+ * To run a mutation, you first call `useTypeMessageMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useTypeMessageMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [typeMessageMutation, { data, loading, error }] = useTypeMessageMutation({
+ *   variables: {
+ *      chatId: // value for 'chatId'
+ *      username: // value for 'username'
+ *   },
+ * });
+ */
+export function useTypeMessageMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<TypeMessageMutation, TypeMessageMutationVariables>) {
+        return ApolloReactHooks.useMutation<TypeMessageMutation, TypeMessageMutationVariables>(TypeMessageDocument, baseOptions);
+      }
+export type TypeMessageMutationHookResult = ReturnType<typeof useTypeMessageMutation>;
+export type TypeMessageMutationResult = ApolloReactCommon.MutationResult<TypeMessageMutation>;
+export type TypeMessageMutationOptions = ApolloReactCommon.BaseMutationOptions<TypeMessageMutation, TypeMessageMutationVariables>;
 export const GetMessagesDocument = gql`
     query getMessages($chatId: Int!, $offset: Int) {
   messages(chatId: $chatId, offset: $offset) {
@@ -1285,43 +1322,6 @@ export function useMessageDeletedSubscription(baseOptions?: ApolloReactHooks.Sub
       }
 export type MessageDeletedSubscriptionHookResult = ReturnType<typeof useMessageDeletedSubscription>;
 export type MessageDeletedSubscriptionResult = ApolloReactCommon.SubscriptionResult<MessageDeletedSubscription>;
-export const TypeMessageDocument = gql`
-    mutation typeMessage($chatId: Int!, $username: String) {
-  typeMessage(chatId: $chatId, username: $username)
-}
-    `;
-export type TypeMessageMutationFn = ApolloReactCommon.MutationFunction<TypeMessageMutation, TypeMessageMutationVariables>;
-export type TypeMessageComponentProps = Omit<ApolloReactComponents.MutationComponentOptions<TypeMessageMutation, TypeMessageMutationVariables>, 'mutation'>;
-
-    export const TypeMessageComponent = (props: TypeMessageComponentProps) => (
-      <ApolloReactComponents.Mutation<TypeMessageMutation, TypeMessageMutationVariables> mutation={TypeMessageDocument} {...props} />
-    );
-    
-
-/**
- * __useTypeMessageMutation__
- *
- * To run a mutation, you first call `useTypeMessageMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useTypeMessageMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [typeMessageMutation, { data, loading, error }] = useTypeMessageMutation({
- *   variables: {
- *      chatId: // value for 'chatId'
- *      username: // value for 'username'
- *   },
- * });
- */
-export function useTypeMessageMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<TypeMessageMutation, TypeMessageMutationVariables>) {
-        return ApolloReactHooks.useMutation<TypeMessageMutation, TypeMessageMutationVariables>(TypeMessageDocument, baseOptions);
-      }
-export type TypeMessageMutationHookResult = ReturnType<typeof useTypeMessageMutation>;
-export type TypeMessageMutationResult = ApolloReactCommon.MutationResult<TypeMessageMutation>;
-export type TypeMessageMutationOptions = ApolloReactCommon.BaseMutationOptions<TypeMessageMutation, TypeMessageMutationVariables>;
 export const UsersDocument = gql`
     query users($username: String) {
   users(username: $username) {

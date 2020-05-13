@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback, useState } from "react";
 import { ListItem, ListItemText, Divider } from "@material-ui/core";
 import {
   formatDate,
@@ -28,35 +28,42 @@ import cx from "classnames";
 //   if (isVisible && message.unread) props.onReadMessage(message.id);
 // };
 
-const DirectChat = (props) => {
+const DirectChat = ({
+  chatId,
+  user,
+  recipient,
+  typingUser,
+  messages,
+  onTyping,
+  onCreateMessage,
+  onDeleteMessage,
+  onLoadMoreMessages,
+}) => {
   const classes = useStyles();
-  const timeline = renderTimeline([...props.messages].reverse());
-  const [send, setSend] = React.useState(false);
+  const timeline = renderTimeline([...messages].reverse());
+  const [send, setSend] = useState(false);
 
   const handleChange = () => {
-    if (props.chatId) {
-      props.onTyping();
-    }
+    if (chatId) onTyping();
   };
 
   const handleCreateMessage = async (message) => {
     setSend(true);
-    await props.onCreateMessage(message);
+    await onCreateMessage(message);
     setSend(false);
   };
 
   const renderStatus = () => {
-    if (props.typingUser) return <Typing variant="secondary" />;
-    if (props.recipient.online) return "online";
-    return `last seen at ${formatDate(props.recipient.lastSeen)}`;
+    if (typingUser) return <Typing variant="secondary" />;
+    if (recipient.online) return "online";
+    return `last seen at ${formatDate(recipient.lastSeen)}`;
   };
 
-  const renderMessages = React.useCallback(
+  const renderMessages = useCallback(
     (messages) =>
       messages.length ? (
         [...messages].reverse().map((message, idx) => {
           const timeDiff = diffTime(message.createdAt, "days");
-
           const timelineChip = idx === timeline[timeDiff] && (
             <StyledChip label={renderDiffTimeLabel(message.createdAt)} />
           );
@@ -67,9 +74,9 @@ const DirectChat = (props) => {
               <Message
                 text={message.text}
                 date={message.createdAt}
-                isOwner={message.userId === props.user.id}
+                isOwner={message.userId === user.id}
                 menuProps={{
-                  onDelete: props.onDeleteMessage(message.id),
+                  onDelete: onDeleteMessage(message.id),
                 }}
               />
             </div>
@@ -78,29 +85,29 @@ const DirectChat = (props) => {
       ) : (
         <DirectFallback />
       ),
-    [props.chatId, props.user.id, props.messages, props.onDeleteMessage]
+    [chatId, user.id, messages, onDeleteMessage]
   );
 
   return (
     <div className={classes.DirectChat}>
       <div className={classes.DirectChat_header}>
-        {props.recipient.username && (
+        {recipient.username && (
           <ListItem dense>
             <ListItemText
-              primary={props.recipient.username}
+              primary={recipient.username}
               primaryTypographyProps={{ component: "div" }}
               secondary={renderStatus()}
               secondaryTypographyProps={{
                 variant: "caption",
                 className: cx({
-                  [classes.DirectChat_header_status]: props.recipient.online,
+                  [classes.DirectChat_header_status]: recipient.online,
                 }),
               }}
             />
             <Avatar
-              src={props.recipient.avatar}
-              alt={props.recipient.username}
-              online={props.recipient.online}
+              src={recipient.avatar}
+              alt={recipient.username}
+              online={recipient.online}
             />
           </ListItem>
         )}
@@ -108,10 +115,9 @@ const DirectChat = (props) => {
       <div className={classes.DirectChat_content}>
         <ChatWindow
           send={send}
-          hasMore={props.hasMore}
-          messages={props.messages}
+          messages={messages}
+          onLoadMore={onLoadMoreMessages}
           renderMessages={renderMessages}
-          onLoadMoreMessages={props.onLoadMoreMessages}
         />
         <Divider />
         <ChatInput onChange={handleChange} onSubmit={handleCreateMessage} />

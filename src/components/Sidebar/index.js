@@ -1,90 +1,79 @@
-import React from "react";
+import React, { useState } from "react";
 import { IconButton, InputBase } from "@material-ui/core";
 import { Menu as MenuIcon } from "@material-ui/icons";
-import { useDebouncedCallback } from "use-debounce";
 import { useStyles } from "./styles";
-import MenuDrawer from "components/MenuDrawer";
 import UserItem from "components/UserItem";
 import DirectItem from "components/DirectItem";
 import StyledList from "components/StylesList";
+import MenuDrawer from "components/MenuDrawer";
 
-const Sidebar = (props) => {
+const Sidebar = ({
+  chatId,
+  chats,
+  users,
+  typings,
+  currentUser,
+  directSubscriptions,
+  onSearch,
+  onLogout,
+  onDeleteDirect,
+}) => {
   const classes = useStyles();
-  const [open, setOpen] = React.useState(false);
-  const [search, setSearch] = React.useState("");
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
-  const renderDirectsList = (data, restProps = {}) => {
-    return data ? (
-      <StyledList disablePadding>
-        {data.map((direct) => (
-          <DirectItem
-            key={direct.id}
-            direct={direct}
-            user={direct.user}
-            typing={
-              props.typings[direct.id] === direct.user.username
-                ? props.typings[direct.id]
-                : ""
-            }
-            link={`/me?p=${direct.user.id}`}
-            selected={direct.user.id === props.chatId}
-            onDelete={props.onDeleteDirect}
-            subscribtions={props.directSubscriptions}
-            {...restProps}
-          />
-        ))}
-      </StyledList>
-    ) : null;
+  const clearSearch = () => setSearch("");
+
+  const renderChats = () => {
+    const directsMatch = chats.filter(({ user }) =>
+      user.username.startsWith(search)
+    );
+
+    const directsMatchIds = directsMatch.map(({ user }) => user.id);
+
+    return (
+      <>
+        <StyledList disablePadding>
+          {directsMatch.map((direct) => (
+            <DirectItem
+              key={direct.id}
+              direct={direct}
+              user={direct.user}
+              typing={
+                typings[direct.id] === direct.user.username
+                  ? typings[direct.id]
+                  : ""
+              }
+              link={`/me?p=${direct.user.id}`}
+              selected={!search && direct.user.id === chatId}
+              onDelete={onDeleteDirect}
+              subscribtions={directSubscriptions}
+              onClick={clearSearch}
+            />
+          ))}
+        </StyledList>
+        {!!users?.length && (
+          <StyledList subheader="Global search" disablePadding>
+            {users.map(
+              (user) =>
+                !directsMatchIds.includes(user.id) && (
+                  <UserItem
+                    key={user.id}
+                    user={user}
+                    link={`/me?p=${user.id}`}
+                    onClick={clearSearch}
+                  />
+                )
+            )}
+          </StyledList>
+        )}
+      </>
+    );
   };
 
-  const renderDirects = () => {
-    if (search.length) {
-      let directsMatch = [];
-
-      if (props.directs && props.directs.length) {
-        directsMatch = props.directs.filter(({ user }) =>
-          user.username.startsWith(search)
-        );
-      }
-
-      const directsMatchIds = directsMatch.map(({ user }) => user.id);
-
-      return (
-        <>
-          {renderDirectsList(directsMatch, {
-            selected: false,
-            onClick: () => setSearch(""),
-          })}
-          {props.users && props.users.length ? (
-            <StyledList subheader="Global search" disablePadding>
-              {props.users.map(
-                (user) =>
-                  !directsMatchIds.includes(user.id) && (
-                    <UserItem
-                      key={user.id}
-                      user={user}
-                      link={`/me?p=${user.id}`}
-                      onClick={() => setSearch("")}
-                    />
-                  )
-              )}
-            </StyledList>
-          ) : null}
-        </>
-      );
-    }
-
-    return renderDirectsList(props.directs);
-  };
-
-  const [debounce] = useDebouncedCallback(
-    (value) => props.onSearch(value),
-    200
-  );
-
-  const handleChange = (e) => {
-    setSearch(e.target.value);
-    debounce(e.target.value);
+  const handleChange = ({ target }) => {
+    setSearch(target.value);
+    onSearch(target.value);
   };
 
   const handleMenuToggle = () => setOpen(!open);
@@ -93,9 +82,9 @@ const Sidebar = (props) => {
     <div className={classes.Sidebar}>
       <MenuDrawer
         open={open}
-        user={props.currentUser}
+        user={currentUser}
         onClose={handleMenuToggle}
-        onLogout={props.onLogout}
+        onLogout={onLogout}
       />
       <div className={classes.Sidebar_main}>
         <div className={classes.Sidebar_header}>
@@ -111,9 +100,7 @@ const Sidebar = (props) => {
             onChange={handleChange}
           />
         </div>
-        <div className={classes.Sidebar_content}>
-          {renderDirects(props.directs)}
-        </div>
+        <div className={classes.Sidebar_content}>{renderChats(chats)}</div>
       </div>
     </div>
   );

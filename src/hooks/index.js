@@ -1,10 +1,10 @@
-import React from "react";
-import { useDebouncedCallback } from "use-debounce";
+import { useState } from "react";
+import { useDebouncedCallback as useDebounce } from "use-debounce";
 
 export const useTyping = (data, callback) => {
-  const [typing, setTyping] = React.useState(false);
-  const [user, setUser] = React.useState("");
-  const [debounce] = useDebouncedCallback(async (value) => {
+  const [typing, setTyping] = useState(false);
+  const [user, setUser] = useState("");
+  const [debounce] = useDebounce(async (value) => {
     setTyping(false);
     await callback(value);
   }, 500);
@@ -18,14 +18,4 @@ export const useTyping = (data, callback) => {
   };
 
   return [{ user, setUser }, onTyping];
-};
-
-export const usePrev = (values) => {
-  const ref = React.useRef();
-
-  React.useEffect(() => {
-    ref.current = values;
-  }, [values]);
-
-  return ref.current;
 };

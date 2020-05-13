@@ -1,9 +1,13 @@
-import React from "react";
-import { pasreQuery } from "utils/index";
-import Sidebar from "components/Sidebar";
-import { sortByLastMessage, authTokens, errorHandler } from "utils/index";
-import { wsLink } from "client";
+import React, { useState, useEffect } from "react";
 import { useHistory } from "react-router-dom";
+import { useDebouncedCallback as useDebounce } from "use-debounce";
+import Sidebar from "components/Sidebar";
+import {
+  sortByLastMessage,
+  pasreQuery,
+  errorHandler,
+  logout,
+} from "utils/index";
 import {
   DirectCreatedDocument,
   DirectDeletedDocument,
@@ -21,19 +25,15 @@ import {
 
 const SidebarContainer = () => {
   const history = useHistory();
-  const onLogout = () => {
-    authTokens.remove();
-    wsLink.subscriptionClient.client.onclose();
-    client.resetStore();
-    history.push("/login");
-  };
   const { data: user } = useCurrentUserQuery();
   const { data: directs, subscribeToMore, client } = useDirectsQuery();
   const [searchUsers, { data: users }] = useUsersLazyQuery();
   const [deleteDirect] = useDeleteDirectMutation({ onError: errorHandler });
-  const [logout] = useLogoutMutation({ onCompleted: onLogout });
+  const [logoutUser] = useLogoutMutation({
+    onCompleted: () => logout(history),
+  });
 
-  const [typings, setTypings] = React.useState({});
+  const [typings, setTypings] = useState({});
   const currentUser = user?.currentUser ?? {};
   const { p: chatId } = pasreQuery(history.location);
 
@@ -51,7 +51,7 @@ const SidebarContainer = () => {
       }),
   ];
 
-  React.useEffect(
+  useEffect(
     () => {
       const chatIds = (directs?.directs ?? []).map(({ id }) => id);
       const subscribtions = {
@@ -142,6 +142,8 @@ const SidebarContainer = () => {
     searchUsers({ variables: { username } });
   };
 
+  const [debounceSearch] = useDebounce(onSearch, 300);
+
   const onDeleteDirect = (id) => {
     deleteDirect({ variables: { id } });
   };
@@ -150,11 +152,11 @@ const SidebarContainer = () => {
     <Sidebar
       chatId={chatId}
       typings={typings}
-      directs={(directs?.directs ?? []).sort(sortByLastMessage)}
+      chats={(directs?.directs ?? []).sort(sortByLastMessage)}
       users={users?.users}
       currentUser={currentUser}
-      onLogout={logout}
-      onSearch={onSearch}
+      onLogout={logoutUser}
+      onSearch={debounceSearch}
       onDeleteDirect={onDeleteDirect}
       directSubscriptions={directSubscriptions}
     />
