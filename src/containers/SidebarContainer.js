@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { useHistory } from "react-router-dom";
+import React, { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { useDebouncedCallback as useDebounce } from "use-debounce";
 import Sidebar from "components/Sidebar";
+import { pasreQuery } from "utils/index";
 import {
-  sortByLastMessage,
-  pasreQuery,
-  errorHandler,
-  logout,
-} from "utils/index";
+  dispatchSetTyping,
+  useDispatch,
+  useSelector,
+  dispatchSetUser,
+} from "store";
 import {
   DirectCreatedDocument,
   DirectDeletedDocument,
@@ -18,38 +19,34 @@ import {
   DirectsDocument,
   useUsersLazyQuery,
   useDirectsQuery,
-  useDeleteDirectMutation,
-  useLogoutMutation,
   useCurrentUserQuery,
 } from "graphql/generated.tsx";
 
 const SidebarContainer = () => {
-  const history = useHistory();
-  const { data: user } = useCurrentUserQuery();
+  useCurrentUserQuery({
+    onCompleted: (data) => dispatch(dispatchSetUser(data.self)),
+  });
+  const location = useLocation();
+  const dispatch = useDispatch();
+  const self = useSelector((store) => store.user);
   const { data: directs, subscribeToMore, client } = useDirectsQuery();
   const [searchUsers, { data: users }] = useUsersLazyQuery();
-  const [deleteDirect] = useDeleteDirectMutation({ onError: errorHandler });
-  const [logoutUser] = useLogoutMutation({
-    onCompleted: () => logout(history),
-  });
+  const { p: chatId } = pasreQuery(location);
 
-  const [typings, setTypings] = useState({});
-  const currentUser = user?.currentUser ?? {};
-  const { p: chatId } = pasreQuery(history.location);
-
-  const directSubscriptions = [
-    (chatId) =>
-      subscribeToMore({
-        document: TypingUserDocument,
-        variables: { chatId },
-        updateQuery: (prev, { subscriptionData }) => {
-          if (!subscriptionData.data) return prev;
-          const { typingUser } = subscriptionData.data;
-          setTypings({ ...typings, [chatId]: typingUser });
-          return prev;
-        },
-      }),
-  ];
+  const directSubscription = (chatId) =>
+    subscribeToMore({
+      document: TypingUserDocument,
+      variables: { chatId },
+      updateQuery: (prev, { subscriptionData }) => {
+        if (!subscriptionData.data) return prev;
+        dispatch(
+          dispatchSetTyping({
+            [chatId]: subscriptionData.data.typingUser,
+          })
+        );
+        return prev;
+      },
+    });
 
   useEffect(
     () => {
@@ -62,7 +59,7 @@ const SidebarContainer = () => {
             updateQuery: (prev, { subscriptionData }) => {
               if (!subscriptionData.data) return prev;
               const { messageCreated } = subscriptionData.data;
-              const unread = messageCreated.userId !== currentUser.id ? 1 : 0;
+              const unread = messageCreated.userId !== self.id ? 1 : 0;
               const directs = prev.directs.map((direct) => {
                 if (direct.id === messageCreated.chatId) {
                   return {
@@ -138,27 +135,18 @@ const SidebarContainer = () => {
     subscribeToMore
   );
 
-  const onSearch = (username) => {
+  const [debounceSearch] = useDebounce((username) => {
     searchUsers({ variables: { username } });
-  };
-
-  const [debounceSearch] = useDebounce(onSearch, 300);
-
-  const onDeleteDirect = (id) => {
-    deleteDirect({ variables: { id } });
-  };
+  }, 300);
 
   return (
     <Sidebar
       chatId={chatId}
-      typings={typings}
-      chats={(directs?.directs ?? []).sort(sortByLastMessage)}
-      users={users?.users}
-      currentUser={currentUser}
-      onLogout={logoutUser}
+      chats={directs?.directs ?? []}
+      users={users?.users ?? []}
+      self={self}
       onSearch={debounceSearch}
-      onDeleteDirect={onDeleteDirect}
-      directSubscriptions={directSubscriptions}
+      directSubscription={directSubscription}
     />
   );
 };

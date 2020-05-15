@@ -41,21 +41,16 @@ query direct($id: Int!) {
   }
 }
 
-query currentDirect($userId: Int!) {
-  currentDirect(userId: $userId) {
-    direct {
-      id
-      user {
-        ...userFragment
-      }
-      lastMessage {
-        ...messageFragment
-      }
-      unread
+query getCurrentDirect($userId: Int!) {
+  direct: direct(userId: $userId) {
+    id
+    lastMessage {
+      ...messageFragment
     }
-    recipient {
-      ...userFragment
-    }
+    unread
+  }
+  recipient: user(id: $userId) {
+    ...userFragment
   }
 }
 

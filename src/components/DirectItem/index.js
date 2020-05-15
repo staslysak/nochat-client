@@ -1,23 +1,24 @@
 import React, { useEffect, useState } from "react";
 import ChatItem from "components/ChatItem";
 import DirectItemMenu from "./DirectItemMenu";
+import { errorHandler } from "utils/index";
+import { useDeleteDirectMutation } from "graphql/generated.tsx";
 
 const DirectItem = ({
   direct,
-  link,
-  typing,
-  selected,
-  user,
+  typingUser,
   onDelete,
-  subscribtions,
+  subscribtion,
   ...props
 }) => {
+  const [deleteChat] = useDeleteDirectMutation({ onError: errorHandler });
+
   const [contextMenu, setContextMenu] = useState(null);
 
   useEffect(() => {
-    const unsubscribes = subscribtions.map((subscribe) => subscribe(direct.id));
-    return () => unsubscribes.map((unsubscribe) => unsubscribe(direct.id));
-  }, [direct.id, subscribtions]);
+    const unsubscribe = subscribtion(direct.id);
+    return () => unsubscribe(direct.id);
+  }, [direct.id, subscribtion]);
 
   const handleOpen = (e) => {
     e.preventDefault();
@@ -27,20 +28,19 @@ const DirectItem = ({
   const handleClose = () => setContextMenu(null);
 
   const handleDelete = () => {
-    onDelete(direct.id);
+    deleteChat({ variables: { id: direct.id } });
   };
 
   return (
     <>
       <ChatItem
-        link={link}
-        typing={typing}
-        selected={selected}
-        avatar={user.avatar}
-        online={user.online}
+        typing={typingUser === direct.user.username ? typingUser : ""}
         unread={direct.unread}
-        primary={user.username}
+        avatar={direct.user.avatar}
+        online={direct.user.online}
+        primary={direct.user.username}
         secondary={direct.lastMessage.text}
+        link={`/me?p=${direct.user.id}`}
         date={direct.lastMessage.createdAt}
         onContextMenu={handleOpen}
         {...props}

@@ -7,18 +7,15 @@ import {
 } from "react-router-dom";
 import { CssBaseline } from "@material-ui/core";
 import { isAuthorized } from "utils/index";
-import {Loader} from 'components/Fallback'
+import { Loader } from "components/Fallback";
+import { useSelector } from "store";
 
-const PrivateRoute = ({ component: Component, ...rest }) => (
+const PrivateRoute = ({ component: Component, ...restProps }) => (
   <Route
-    {...rest}
-    render={(props) => {
-      return isAuthorized() ? (
-        <Component {...props} />
-      ) : (
-        <Redirect to="/login" />
-      );
-    }}
+    {...restProps}
+    render={(props) =>
+      isAuthorized() ? <Component {...props} /> : <Redirect to="/login" />
+    }
   />
 );
 
@@ -44,6 +41,8 @@ const publicRoutes = [
 ];
 
 const App = () => {
+  const isAuthorized = useSelector((store) => store.authorized);
+
   return (
     <Suspense fallback={<Loader />}>
       <CssBaseline />
@@ -57,7 +56,7 @@ const App = () => {
           ))}
           <Route
             path="*"
-            render={() => <Redirect to={isAuthorized() ? "/me" : "/login"} />}
+            render={() => <Redirect to={isAuthorized ? "/me" : "/login"} />}
           />
         </Switch>
       </Router>

@@ -2,20 +2,42 @@ import React, { useRef, useState, useEffect } from "react";
 import { InputBase, IconButton } from "@material-ui/core";
 import SendIcon from "@material-ui/icons/Send";
 import useStyles from "./styles";
-import { withRouter } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { useTypeMessageMutation } from "graphql/generated.tsx";
+import { useDebouncedCallback as useDebounce } from "use-debounce";
 
-const ChatInput = (props) => {
+const ChatInput = ({ chatId, username, ...props }) => {
+  const location = useLocation();
   const classes = useStyles();
-  const inputRef = useRef();
+  const ref = useRef();
   const [message, setMessage] = useState("");
+  const [typing, setTyping] = useState(false);
+  const [typeMessage] = useTypeMessageMutation();
+
+  const handleStopTyping = () => {
+    typeMessage({ variables: { chatId, username: "" } }).then(() =>
+      setTyping(false)
+    );
+  };
+
+  const [debounceTyping] = useDebounce(handleStopTyping, 500);
+
+  const handleKeyDown = () => {
+    if (!typing && chatId) {
+      setTyping(true);
+      typeMessage({ variables: { chatId, username } });
+    }
+  };
+
+  const handleKeyUp = () => {
+    if (chatId) debounceTyping();
+  };
 
   useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
+    if (ref.current) ref.current.focus();
 
     setMessage("");
-  }, [props.location]);
+  }, [location]);
 
   const handleOnSubmit = () => {
     if (message.trim().length) {
@@ -25,10 +47,8 @@ const ChatInput = (props) => {
     setMessage("");
   };
 
-  const handleOnClick = (inputRef) => () => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
+  const handleOnClick = () => {
+    if (ref.current) ref.current.focus();
     handleOnSubmit();
   };
 
@@ -40,7 +60,6 @@ const ChatInput = (props) => {
   };
 
   const handleOnChange = (e) => {
-    props.onChange();
     setMessage(e.target.value);
   };
 
@@ -49,22 +68,21 @@ const ChatInput = (props) => {
       <InputBase
         fullWidth
         multiline
+        ref={ref}
         rowsMax={12}
-        inputRef={inputRef}
         value={message}
+        onKeyUp={handleKeyUp}
+        onKeyDown={handleKeyDown}
         onChange={handleOnChange}
         onKeyPress={handleKeyPress}
         placeholder="Write a message..."
         className={classes.ChatWindow_input}
       />
-      <IconButton
-        onClick={handleOnClick(inputRef)}
-        disabled={!message.trim().length}
-      >
+      <IconButton onClick={handleOnClick} disabled={!message.trim().length}>
         <SendIcon />
       </IconButton>
     </div>
   );
 };
 
-export default withRouter(ChatInput);
+export default React.memo(ChatInput);

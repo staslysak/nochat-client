@@ -15,6 +15,7 @@ export const useStyles = makeStyles((theme) => ({
   ChatItem_secondary: {
     display: "flex",
     alignItems: "center",
+    height: 20
   },
   ChatItem_primaryText: {
     width: "100%",

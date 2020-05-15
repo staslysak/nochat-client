@@ -30,7 +30,3 @@ export const pasreQuery = (location) => {
   };
   return qs.parse(location.search, settings);
 };
-
-export const sortByLastMessage = (a, b) => {
-  return b.lastMessage.createdAt - a.lastMessage.createdAt;
-};

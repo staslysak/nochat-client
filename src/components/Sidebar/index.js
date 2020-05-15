@@ -1,62 +1,71 @@
 import React, { useState } from "react";
-import { IconButton, InputBase } from "@material-ui/core";
-import { Menu as MenuIcon } from "@material-ui/icons";
+import { InputBase } from "@material-ui/core";
 import { useStyles } from "./styles";
 import UserItem from "components/UserItem";
 import DirectItem from "components/DirectItem";
 import StyledList from "components/StylesList";
 import MenuDrawer from "components/MenuDrawer";
+import { useSelector, useDispatch, dispatchToggleMenu } from "store";
 
 const Sidebar = ({
+  self,
   chatId,
   chats,
   users,
-  typings,
-  currentUser,
-  directSubscriptions,
   onSearch,
-  onLogout,
-  onDeleteDirect,
+  directSubscription,
 }) => {
   const classes = useStyles();
-  const [open, setOpen] = useState(false);
+  const dispatch = useDispatch();
   const [search, setSearch] = useState("");
+  const { menuIsOpen, typingUsers } = useSelector((store) => store);
+
+  const chatsMatch = chats
+    .sort((a, b) => b.lastMessage.createdAt - a.lastMessage.createdAt)
+    .filter(({ user }) => user.username.startsWith(search));
+
+  const chatsMatchIds = chatsMatch.map(({ user }) => user.id);
 
   const clearSearch = () => setSearch("");
 
-  const renderChats = () => {
-    const directsMatch = chats.filter(({ user }) =>
-      user.username.startsWith(search)
-    );
+  const toggleMenu = () => dispatch(dispatchToggleMenu());
 
-    const directsMatchIds = directsMatch.map(({ user }) => user.id);
+  const handleonSearch = ({ target }) => {
+    setSearch(target.value);
+    onSearch(target.value);
+  };
 
-    return (
-      <>
-        <StyledList disablePadding>
-          {directsMatch.map((direct) => (
-            <DirectItem
-              key={direct.id}
-              direct={direct}
-              user={direct.user}
-              typing={
-                typings[direct.id] === direct.user.username
-                  ? typings[direct.id]
-                  : ""
-              }
-              link={`/me?p=${direct.user.id}`}
-              selected={!search && direct.user.id === chatId}
-              onDelete={onDeleteDirect}
-              subscribtions={directSubscriptions}
-              onClick={clearSearch}
-            />
-          ))}
-        </StyledList>
-        {!!users?.length && (
-          <StyledList subheader="Global search" disablePadding>
+  return (
+    <div className={classes.Sidebar}>
+      <div className={classes.Sidebar_main}>
+        <div className={classes.Sidebar_header}>
+          <MenuDrawer open={menuIsOpen} user={self} onToggle={toggleMenu} />
+          <InputBase
+            fullWidth
+            size="small"
+            value={search}
+            placeholder="Search"
+            onChange={handleonSearch}
+            className={classes.Sidebar_searchbar}
+          />
+        </div>
+        <div className={classes.Sidebar_content}>
+          <StyledList disablePadding visible={chats.length}>
+            {chatsMatch.map((direct) => (
+              <DirectItem
+                key={direct.id}
+                direct={direct}
+                subscribtion={directSubscription}
+                typingUser={typingUsers[direct.id]}
+                selected={!search && direct.user.id === chatId}
+                onClick={clearSearch}
+              />
+            ))}
+          </StyledList>
+          <StyledList subheader="Global search" visible={search} disablePadding>
             {users.map(
               (user) =>
-                !directsMatchIds.includes(user.id) && (
+                !chatsMatchIds.includes(user.id) && (
                   <UserItem
                     key={user.id}
                     user={user}
@@ -66,41 +75,7 @@ const Sidebar = ({
                 )
             )}
           </StyledList>
-        )}
-      </>
-    );
-  };
-
-  const handleChange = ({ target }) => {
-    setSearch(target.value);
-    onSearch(target.value);
-  };
-
-  const handleMenuToggle = () => setOpen(!open);
-
-  return (
-    <div className={classes.Sidebar}>
-      <MenuDrawer
-        open={open}
-        user={currentUser}
-        onClose={handleMenuToggle}
-        onLogout={onLogout}
-      />
-      <div className={classes.Sidebar_main}>
-        <div className={classes.Sidebar_header}>
-          <IconButton edge="start" color="inherit" onClick={handleMenuToggle}>
-            <MenuIcon />
-          </IconButton>
-          <InputBase
-            fullWidth
-            size="small"
-            value={search}
-            placeholder="Search"
-            className={classes.Sidebar_searchbar}
-            onChange={handleChange}
-          />
         </div>
-        <div className={classes.Sidebar_content}>{renderChats(chats)}</div>
       </div>
     </div>
   );

@@ -42,7 +42,7 @@ export const isAuthorized = () => {
 
 export const logout = (history) => {
   authTokens.remove();
-  wsLink.subscriptionClient.client.onclose();
+  wsLink.subscriptionClient.close();
   client.resetStore();
   if (history) history.push("/login");
 };

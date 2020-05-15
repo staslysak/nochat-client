@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback } from "react";
 import { ListItem, ListItemText, Divider } from "@material-ui/core";
 import {
   formatDate,
@@ -7,7 +7,7 @@ import {
   renderTimeline,
 } from "utils/index";
 import Avatar from "components/Avatar";
-import ChatWindow from "components/ChatWindow";
+import ChatWindow, { updateView } from "components/ChatWindow";
 import ChatInput from "components/ChatWindow/ChatInput";
 import StyledChip from "components/StyledChip";
 import Message from "components/Message";
@@ -15,6 +15,7 @@ import { DirectFallback } from "components/Fallback";
 import Typing from "components/Typing";
 import { useStyles } from "./styles";
 import cx from "classnames";
+import { useSelector } from "store";
 
 // import VisibilitySenson from "react-visibility-sensor";
 // <VisibilitySenson
@@ -30,31 +31,28 @@ import cx from "classnames";
 
 const DirectChat = ({
   chatId,
-  user,
   recipient,
-  typingUser,
   messages,
-  onTyping,
   onCreateMessage,
   onDeleteMessage,
   onLoadMoreMessages,
 }) => {
+  const { isTyping, user } = useSelector(({ typingUsers, user }) => ({
+    user,
+    isTyping: typingUsers[chatId] === user.username ? "" : typingUsers[chatId],
+  }));
   const classes = useStyles();
+  const chatWindowRef = React.useRef();
   const timeline = renderTimeline([...messages].reverse());
-  const [send, setSend] = useState(false);
-
-  const handleChange = () => {
-    if (chatId) onTyping();
-  };
 
   const handleCreateMessage = async (message) => {
-    setSend(true);
-    await onCreateMessage(message);
-    setSend(false);
+    await onCreateMessage(message).then(() => {
+      updateView(chatWindowRef);
+    });
   };
 
   const renderStatus = () => {
-    if (typingUser) return <Typing variant="secondary" />;
+    if (isTyping) return <Typing variant="secondary" />;
     if (recipient.online) return "online";
     return `last seen at ${formatDate(recipient.lastSeen)}`;
   };
@@ -85,45 +83,47 @@ const DirectChat = ({
       ) : (
         <DirectFallback />
       ),
-    [chatId, user.id, messages, onDeleteMessage]
+    [chatId, messages, onDeleteMessage]
   );
 
   return (
     <div className={classes.DirectChat}>
       <div className={classes.DirectChat_header}>
-        {recipient.username && (
-          <ListItem dense>
-            <ListItemText
-              primary={recipient.username}
-              primaryTypographyProps={{ component: "div" }}
-              secondary={renderStatus()}
-              secondaryTypographyProps={{
-                variant: "caption",
-                className: cx({
-                  [classes.DirectChat_header_status]: recipient.online,
-                }),
-              }}
-            />
-            <Avatar
-              src={recipient.avatar}
-              alt={recipient.username}
-              online={recipient.online}
-            />
-          </ListItem>
-        )}
+        <ListItem dense>
+          <ListItemText
+            primary={recipient.username}
+            primaryTypographyProps={{ component: "div" }}
+            secondary={renderStatus()}
+            secondaryTypographyProps={{
+              variant: "caption",
+              className: cx({
+                [classes.DirectChat_header_status]: recipient.online,
+              }),
+            }}
+          />
+          <Avatar
+            src={recipient.avatar}
+            alt={recipient.username}
+            online={recipient.online}
+          />
+        </ListItem>
       </div>
       <div className={classes.DirectChat_content}>
         <ChatWindow
-          send={send}
+          ref={chatWindowRef}
           messages={messages}
           onLoadMore={onLoadMoreMessages}
           renderMessages={renderMessages}
         />
         <Divider />
-        <ChatInput onChange={handleChange} onSubmit={handleCreateMessage} />
+        <ChatInput
+          chatId={chatId}
+          username={user.username}
+          onSubmit={handleCreateMessage}
+        />
       </div>
     </div>
   );
 };
 
-export default DirectChat;
+export default React.memo(DirectChat);

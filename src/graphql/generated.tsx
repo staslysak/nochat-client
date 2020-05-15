@@ -18,17 +18,12 @@ export type Scalars = {
 
 export type Direct = {
    __typename?: 'Direct';
-  id: Scalars['Int'];
+  id?: Maybe<Scalars['Int']>;
   user?: Maybe<User>;
   unread?: Maybe<Scalars['Int']>;
-  createdAt: Scalars['String'];
+  createdAt?: Maybe<Scalars['String']>;
+  messages?: Maybe<Array<Maybe<Message>>>;
   lastMessage?: Maybe<Message>;
-};
-
-export type CurrentDirect = {
-   __typename?: 'CurrentDirect';
-  direct?: Maybe<Direct>;
-  recipient?: Maybe<User>;
 };
 
 export type Subscription = {
@@ -59,10 +54,10 @@ export type SubscriptionTypingUserArgs = {
 export type Query = {
    __typename?: 'Query';
   directs?: Maybe<Array<Direct>>;
-  direct: Direct;
-  currentDirect?: Maybe<CurrentDirect>;
+  direct?: Maybe<Direct>;
   messages: Array<Message>;
-  currentUser: User;
+  self: User;
+  user: User;
   users?: Maybe<Array<User>>;
   onlineUsers?: Maybe<Array<User>>;
   refreshTokens?: Maybe<TokensResponse>;
@@ -70,18 +65,19 @@ export type Query = {
 
 
 export type QueryDirectArgs = {
-  id: Scalars['Int'];
-};
-
-
-export type QueryCurrentDirectArgs = {
-  userId: Scalars['Int'];
+  userId?: Maybe<Scalars['Int']>;
+  id?: Maybe<Scalars['Int']>;
 };
 
 
 export type QueryMessagesArgs = {
   chatId: Scalars['Int'];
   offset?: Maybe<Scalars['Int']>;
+};
+
+
+export type QueryUserArgs = {
+  id: Scalars['Int'];
 };
 
 
@@ -322,7 +318,7 @@ export type DirectQueryVariables = {
 
 export type DirectQuery = (
   { __typename?: 'Query' }
-  & { direct: (
+  & { direct?: Maybe<(
     { __typename?: 'Direct' }
     & Pick<Direct, 'id' | 'unread'>
     & { user?: Maybe<(
@@ -332,33 +328,27 @@ export type DirectQuery = (
       { __typename?: 'Message' }
       & MessageFragmentFragment
     )> }
-  ) }
+  )> }
 );
 
-export type CurrentDirectQueryVariables = {
+export type GetCurrentDirectQueryVariables = {
   userId: Scalars['Int'];
 };
 
 
-export type CurrentDirectQuery = (
+export type GetCurrentDirectQuery = (
   { __typename?: 'Query' }
-  & { currentDirect?: Maybe<(
-    { __typename?: 'CurrentDirect' }
-    & { direct?: Maybe<(
-      { __typename?: 'Direct' }
-      & Pick<Direct, 'id' | 'unread'>
-      & { user?: Maybe<(
-        { __typename?: 'User' }
-        & UserFragmentFragment
-      )>, lastMessage?: Maybe<(
-        { __typename?: 'Message' }
-        & MessageFragmentFragment
-      )> }
-    )>, recipient?: Maybe<(
-      { __typename?: 'User' }
-      & UserFragmentFragment
+  & { direct?: Maybe<(
+    { __typename?: 'Direct' }
+    & Pick<Direct, 'id' | 'unread'>
+    & { lastMessage?: Maybe<(
+      { __typename?: 'Message' }
+      & MessageFragmentFragment
     )> }
-  )> }
+  )>, recipient: (
+    { __typename?: 'User' }
+    & UserFragmentFragment
+  ) }
 );
 
 export type DirectDeletedSubscriptionVariables = {};
@@ -511,7 +501,7 @@ export type CurrentUserQueryVariables = {};
 
 export type CurrentUserQuery = (
   { __typename?: 'Query' }
-  & { currentUser: (
+  & { self: (
     { __typename?: 'User' }
     & UserFragmentFragment
   ) }
@@ -927,58 +917,53 @@ export function useDirectLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookO
 export type DirectQueryHookResult = ReturnType<typeof useDirectQuery>;
 export type DirectLazyQueryHookResult = ReturnType<typeof useDirectLazyQuery>;
 export type DirectQueryResult = ApolloReactCommon.QueryResult<DirectQuery, DirectQueryVariables>;
-export const CurrentDirectDocument = gql`
-    query currentDirect($userId: Int!) {
-  currentDirect(userId: $userId) {
-    direct {
-      id
-      user {
-        ...userFragment
-      }
-      lastMessage {
-        ...messageFragment
-      }
-      unread
+export const GetCurrentDirectDocument = gql`
+    query getCurrentDirect($userId: Int!) {
+  direct: direct(userId: $userId) {
+    id
+    lastMessage {
+      ...messageFragment
     }
-    recipient {
-      ...userFragment
-    }
+    unread
+  }
+  recipient: user(id: $userId) {
+    ...userFragment
   }
 }
-    ${UserFragmentFragmentDoc}
-${MessageFragmentFragmentDoc}`;
-export type CurrentDirectComponentProps = Omit<ApolloReactComponents.QueryComponentOptions<CurrentDirectQuery, CurrentDirectQueryVariables>, 'query'> & ({ variables: CurrentDirectQueryVariables; skip?: boolean; } | { skip: boolean; });
+    ${MessageFragmentFragmentDoc}
+${UserFragmentFragmentDoc}`;
+export type GetCurrentDirectComponentProps = Omit<ApolloReactComponents.QueryComponentOptions<GetCurrentDirectQuery, GetCurrentDirectQueryVariables>, 'query'> & ({ variables: GetCurrentDirectQueryVariables; skip?: boolean; } | { skip: boolean; });
 
-    export const CurrentDirectComponent = (props: CurrentDirectComponentProps) => (
-      <ApolloReactComponents.Query<CurrentDirectQuery, CurrentDirectQueryVariables> query={CurrentDirectDocument} {...props} />
+    export const GetCurrentDirectComponent = (props: GetCurrentDirectComponentProps) => (
+      <ApolloReactComponents.Query<GetCurrentDirectQuery, GetCurrentDirectQueryVariables> query={GetCurrentDirectDocument} {...props} />
     );
     
 
 /**
- * __useCurrentDirectQuery__
+ * __useGetCurrentDirectQuery__
  *
- * To run a query within a React component, call `useCurrentDirectQuery` and pass it any options that fit your needs.
- * When your component renders, `useCurrentDirectQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * To run a query within a React component, call `useGetCurrentDirectQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetCurrentDirectQuery` returns an object from Apollo Client that contains loading, error, and data properties
  * you can use to render your UI.
  *
  * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const { data, loading, error } = useCurrentDirectQuery({
+ * const { data, loading, error } = useGetCurrentDirectQuery({
  *   variables: {
  *      userId: // value for 'userId'
  *   },
  * });
  */
-export function useCurrentDirectQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<CurrentDirectQuery, CurrentDirectQueryVariables>) {
-        return ApolloReactHooks.useQuery<CurrentDirectQuery, CurrentDirectQueryVariables>(CurrentDirectDocument, baseOptions);
+export function useGetCurrentDirectQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<GetCurrentDirectQuery, GetCurrentDirectQueryVariables>) {
+        return ApolloReactHooks.useQuery<GetCurrentDirectQuery, GetCurrentDirectQueryVariables>(GetCurrentDirectDocument, baseOptions);
       }
-export function useCurrentDirectLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<CurrentDirectQuery, CurrentDirectQueryVariables>) {
-          return ApolloReactHooks.useLazyQuery<CurrentDirectQuery, CurrentDirectQueryVariables>(CurrentDirectDocument, baseOptions);
+export function useGetCurrentDirectLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GetCurrentDirectQuery, GetCurrentDirectQueryVariables>) {
+          return ApolloReactHooks.useLazyQuery<GetCurrentDirectQuery, GetCurrentDirectQueryVariables>(GetCurrentDirectDocument, baseOptions);
         }
-export type CurrentDirectQueryHookResult = ReturnType<typeof useCurrentDirectQuery>;
-export type CurrentDirectLazyQueryHookResult = ReturnType<typeof useCurrentDirectLazyQuery>;
-export type CurrentDirectQueryResult = ApolloReactCommon.QueryResult<CurrentDirectQuery, CurrentDirectQueryVariables>;
+export type GetCurrentDirectQueryHookResult = ReturnType<typeof useGetCurrentDirectQuery>;
+export type GetCurrentDirectLazyQueryHookResult = ReturnType<typeof useGetCurrentDirectLazyQuery>;
+export type GetCurrentDirectQueryResult = ApolloReactCommon.QueryResult<GetCurrentDirectQuery, GetCurrentDirectQueryVariables>;
 export const DirectDeletedDocument = gql`
     subscription directDeleted {
   direct: directDeleted {
@@ -1363,7 +1348,7 @@ export type UsersLazyQueryHookResult = ReturnType<typeof useUsersLazyQuery>;
 export type UsersQueryResult = ApolloReactCommon.QueryResult<UsersQuery, UsersQueryVariables>;
 export const CurrentUserDocument = gql`
     query currentUser {
-  currentUser {
+  self {
     ...userFragment
   }
 }

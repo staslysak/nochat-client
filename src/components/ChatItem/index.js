@@ -19,26 +19,15 @@ const ChatItem = ({
   online,
   unread,
   typing = false,
-  selected,
   primary,
   secondary,
 
-  onContextMenu,
   ...props
 }) => {
   const classes = useStyles();
 
   return (
-    <ListItem
-      dense
-      button
-      // disableRipple
-      to={link}
-      component={Link}
-      selected={selected}
-      onContextMenu={onContextMenu}
-      {...props}
-    >
+    <ListItem dense button to={link} component={Link} disableRipple {...props}>
       <ListItemAvatar>
         <Avatar src={avatar} alt={primary} online={online} />
       </ListItemAvatar>

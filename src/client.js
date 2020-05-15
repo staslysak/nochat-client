@@ -7,6 +7,7 @@ import { onError } from "apollo-link-error";
 import { getMainDefinition } from "apollo-utilities";
 import { authTokens } from "utils/index";
 import { RefreshTokensDocument } from "graphql/generated.tsx";
+import { store, dispatchSetUser } from "store";
 
 const refreshTokens = async () =>
   await client
@@ -27,13 +28,13 @@ const httpLink = new HttpLink({
 export const wsLink = new WebSocketLink({
   uri: `${process.env.REACT_APP_SOCKET_URI}/graphql`,
   options: {
-    reconnect: true,
-    connectionParams: () => ({
-      authorization: authTokens.get("accessToken"),
-    }),
+    reconnect: !!authTokens.get("refreshToken"),
     connectionCallback() {
       console.log("CONNECTION_TOKEN", authTokens.get("accessToken"));
     },
+    connectionParams: () => ({
+      authorization: authTokens.get("accessToken"),
+    }),
   },
 });
 
@@ -51,10 +52,13 @@ export const getRefreshedTokens = async (operation, forward) => {
 
     forward(operation).subscribe({
       next: ({ data }) => {
-        const { query, variables } = operation;
-        if (data?.directs) client.query({ query, variables, data });
-        if (data?.currentUser) client.query({ query, variables, data });
-        if (data?.currentDirect) client.query({ query, variables, data });
+        if (operation.operationName === "self") {
+          client.query({ ...operation, data }).then(({ data }) => {
+            store.dispatch(dispatchSetUser(data["self"]));
+          });
+        } else {
+          client.query({ ...operation, data });
+        }
       },
     });
   });
@@ -87,8 +91,7 @@ const errorMiddleware = onError(
           `[GraphQL ERROR]:
           CODE: ${extensions.code},
           Message: ${message},
-          Path: ${path}
-      `
+          Path: ${path}`
         );
       });
     }
@@ -99,23 +102,19 @@ const errorMiddleware = onError(
   }
 );
 
-const httpLinkWithMiddleware = authLink.concat(
-  ApolloLink.from([errorMiddleware, httpLink])
-);
-
-const link = split(
-  ({ query }) => {
-    const definition = getMainDefinition(query);
-    return (
-      definition.kind === "OperationDefinition" &&
-      definition.operation === "subscription"
-    );
-  },
-  wsLink,
-  httpLinkWithMiddleware
-);
+export const cache = new InMemoryCache();
 
 export const client = new ApolloClient({
-  link,
-  cache: new InMemoryCache(),
+  cache,
+  link: split(
+    ({ query }) => {
+      const definition = getMainDefinition(query);
+      return (
+        definition.kind === "OperationDefinition" &&
+        definition.operation === "subscription"
+      );
+    },
+    wsLink,
+    authLink.concat(ApolloLink.from([errorMiddleware, httpLink]))
+  ),
 });

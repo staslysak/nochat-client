@@ -3,7 +3,9 @@ import { makeStyles } from "@material-ui/core/styles";
 export const useStyles = makeStyles((theme) => ({
   MenuDrawer: {
     position: "absolute",
-    width: "95%",
+    top: 0,
+    left: 0,
+    width: "calc(100% - 16px)",
     height: "100%",
     zIndex: theme.zIndex.tooltip,
     // background: theme.palette.background.paper,
@@ -21,10 +23,11 @@ export const useStyles = makeStyles((theme) => ({
     },
   },
   MenuDrawer_backdrop: {
+    left: "auto",
+    right: "auto",
     width: "100%",
     maxWidth: 960,
     zIndex: 1300,
-    left: "auto",
-    right: "auto",
+    marginLeft: -24,
   },
 }));

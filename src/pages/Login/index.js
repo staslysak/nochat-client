@@ -9,6 +9,7 @@ import { useLoginMutation, useRegisterMutation } from "graphql/generated.tsx";
 import { Link } from "react-router-dom";
 import { makeStyles } from "@material-ui/core/styles";
 import { authTokens } from "utils/index";
+import { useDispatch, dispatchSetUser } from "store";
 
 const useStyles = makeStyles((theme) => ({
   Login: {
@@ -26,6 +27,7 @@ const useStyles = makeStyles((theme) => ({
 
 const Login = ({ history, location }) => {
   const classes = useStyles();
+  const dispatch = useDispatch();
   const isRegister = /\/registration/.test(location.pathname);
   const [values, setValues] = useState({});
   const [errors, setErrors] = useState({});
@@ -35,6 +37,7 @@ const Login = ({ history, location }) => {
       alert("Check your email");
       history.push("/login");
     } else {
+      dispatch(dispatchSetUser({}));
       authTokens.set(data.login);
       history.push("/me");
     }
