@@ -341,7 +341,10 @@ export type GetCurrentDirectQuery = (
   & { direct?: Maybe<(
     { __typename?: 'Direct' }
     & Pick<Direct, 'id' | 'unread'>
-    & { lastMessage?: Maybe<(
+    & { messages?: Maybe<Array<Maybe<(
+      { __typename?: 'Message' }
+      & MessageFragmentFragment
+    )>>>, lastMessage?: Maybe<(
       { __typename?: 'Message' }
       & MessageFragmentFragment
     )> }
@@ -921,6 +924,9 @@ export const GetCurrentDirectDocument = gql`
     query getCurrentDirect($userId: Int!) {
   direct: direct(userId: $userId) {
     id
+    messages {
+      ...messageFragment
+    }
     lastMessage {
       ...messageFragment
     }

@@ -14,11 +14,10 @@ import {
   useDeleteMessageMutation,
   useReadMessageMutation,
   useTypeMessageMutation,
-  useGetMessagesQuery,
+  useGetCurrentDirectQuery,
 } from "graphql/generated.tsx";
 import { useDispatch } from "react-redux";
 import { dispatchSetTyping } from "store";
-import { useGetCurrentDirectQuery } from "graphql/generated";
 
 const DirectChatContainer = ({ userId }) => {
   const dispatch = useDispatch();
@@ -30,6 +29,7 @@ const DirectChatContainer = ({ userId }) => {
     onError,
     skip: !userId,
     variables: { userId },
+    notifyOnNetworkStatusChange: true,
   });
   const [createDirect] = useCreateDirectMutation({ onError });
   const [deleteDirect] = useDeleteDirectMutation({ onError });
@@ -37,25 +37,18 @@ const DirectChatContainer = ({ userId }) => {
   const [deleteMessage] = useDeleteMessageMutation({ onError });
   const [readMessage] = useReadMessageMutation({ onError });
   const [typeMessage] = useTypeMessageMutation();
-  const recipient = currentDirect?.data?.recipient ?? {};
-  const chatId = currentDirect?.data?.direct?.id ?? null;
-
-  const messagesData = useGetMessagesQuery({
-    onError,
-    skip: !chatId,
-    variables: { chatId },
-    notifyOnNetworkStatusChange: true,
-  });
-
-  const messages = messagesData.data?.messages ?? [];
+  const recipient = currentDirect.data?.recipient ?? {};
+  const chatId = currentDirect.data?.direct?.id ?? null;
+  const messages = currentDirect.data?.direct?.messages ?? [];
 
   useEffect(() => {
     setState((prev) => ({ ...prev, hasMore: true }));
   }, [userId]);
 
   const loadMoreMessages = () => {
-    if (messages.length && state.hasMore && chatId && !messagesData.loading) {
-      messagesData.fetchMore({
+    if (messages.length && state.hasMore && chatId && !currentDirect.loading) {
+      currentDirect.fetchMore({
+        query: GetMessagesDocument,
         variables: { chatId, offset: messages.length },
         updateQuery: (prev, { fetchMoreResult }) => {
           if (!fetchMoreResult) return prev;
@@ -65,60 +58,16 @@ const DirectChatContainer = ({ userId }) => {
           }
 
           return {
-            messages: [...prev.messages, ...fetchMoreResult.messages],
+            ...prev,
+            direct: {
+              ...prev.direct,
+              messages: [...prev.direct.messages, ...fetchMoreResult.messages],
+            },
           };
         },
       });
     }
   };
-
-  useEffect(() => {
-    const subscribtions = {
-      messageCreated: () => {
-        return messagesData.subscribeToMore({
-          document: MessageCreatedDocument,
-          variables: { chatIds: [chatId] },
-          updateQuery: (prev, { subscriptionData }) => {
-            if (!subscriptionData.data) return prev;
-            return {
-              messages: [
-                subscriptionData.data.messageCreated,
-                ...prev.messages,
-              ],
-            };
-          },
-        });
-      },
-      messagesDeleted: () => {
-        return messagesData.subscribeToMore({
-          document: MessageDeletedDocument,
-          variables: { chatIds: [chatId] },
-          updateQuery: (prev, { subscriptionData }) => {
-            if (!subscriptionData.data) return prev;
-            const messages = prev.messages.filter(
-              (message) =>
-                subscriptionData.data.messageDeleted.ids !== message.id
-            );
-
-            client.writeQuery({
-              query: GetMessagesDocument,
-              data: { messages },
-            });
-
-            return { messages };
-          },
-        });
-      },
-    };
-
-    const messageCreated = subscribtions.messageCreated();
-    const messageDeleted = subscribtions.messagesDeleted();
-
-    return () => {
-      messageCreated();
-      messageDeleted();
-    };
-  }, [messagesData.subscribeToMore, chatId]);
 
   useEffect(() => {
     const subscribtions = {
@@ -147,13 +96,52 @@ const DirectChatContainer = ({ userId }) => {
             return { ...prev, direct: null };
           },
         }),
+      messageCreated: () => {
+        return currentDirect.subscribeToMore({
+          document: MessageCreatedDocument,
+          variables: { chatIds: [chatId] },
+          updateQuery: (prev, { subscriptionData }) => {
+            if (!subscriptionData.data) return prev;
+            return {
+              ...prev,
+              direct: {
+                ...prev.direct,
+                messages: [
+                  subscriptionData.data.messageCreated,
+                  ...prev.direct.messages,
+                ],
+              },
+            };
+          },
+        });
+      },
+      messagesDeleted: () => {
+        return currentDirect.subscribeToMore({
+          document: MessageDeletedDocument,
+          variables: { chatIds: [chatId] },
+          updateQuery: (prev, { subscriptionData }) => {
+            if (!subscriptionData.data) return prev;
+            const messages = prev.direct.messages.filter(
+              (message) =>
+                subscriptionData.data.messageDeleted.ids !== message.id
+            );
+
+            return { ...prev, direct: { ...prev.direct, messages } };
+          },
+        });
+      },
     };
 
     const directCreated = subscribtions.directCreated();
     const directDeleted = subscribtions.directDeleted();
+    const messageCreated = subscribtions.messageCreated();
+    const messageDeleted = subscribtions.messagesDeleted();
+
     return () => {
       directCreated();
       directDeleted();
+      messageCreated();
+      messageDeleted();
     };
   }, [currentDirect, chatId]);
 

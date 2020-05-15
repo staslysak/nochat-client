@@ -44,6 +44,9 @@ query direct($id: Int!) {
 query getCurrentDirect($userId: Int!) {
   direct: direct(userId: $userId) {
     id
+    messages {
+      ...messageFragment
+    }
     lastMessage {
       ...messageFragment
     }
